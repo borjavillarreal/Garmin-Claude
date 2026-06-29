@@ -79,15 +79,46 @@ def _login_interactive() -> "Garmin":
         )
 
     garmin = Garmin(email=email, password=password, return_on_mfa=True)
-    result1, result2 = garmin.login()
-    if result1 == "needs_mfa":
-        code = input("Enter the 2FA / MFA code Garmin just sent you: ").strip()
-        garmin.resume_login(result2, code)
+    try:
+        result1, result2 = garmin.login()
+        if result1 == "needs_mfa":
+            code = input("Enter the 2FA / MFA code Garmin just sent you: ").strip()
+            garmin.resume_login(result2, code)
+    except Exception as exc:  # noqa: BLE001 - upstream raises many error types
+        _explain_login_error(exc)
+
+    # If login did not actually authenticate, there is no token to save.
+    if getattr(garmin, "garth", None) is None:
+        _explain_login_error(
+            "login did not complete (no session/token was created)"
+        )
 
     # Persist the token bundle to disk so future runs skip the password.
     garmin.garth.dump(TOKENSTORE)
     print(f"Login OK. Token saved to {TOKENSTORE}")
     return garmin
+
+
+def _explain_login_error(exc) -> None:
+    """Turn a raw login failure into a plain-English message, then exit."""
+    msg = str(exc)
+    if "429" in msg or "rate" in msg.lower():
+        sys.exit(
+            "\nGarmin rate-limited this network (HTTP 429).\n"
+            "Your password was NOT the problem — Garmin just refused the "
+            "request because of too many login attempts from your IP.\n\n"
+            "What to do:\n"
+            "  1. STOP retrying — each attempt extends the cooldown.\n"
+            "  2. Wait ~1-3 hours, then run --login once more, OR\n"
+            "  3. Try right now from a different network (e.g. your phone's\n"
+            "     hotspot) — the limit is tied to your internet IP.\n"
+        )
+    if "401" in msg or "credential" in msg.lower() or "invalid" in msg.lower():
+        sys.exit(
+            "\nGarmin rejected the email or password (HTTP 401).\n"
+            "Double-check GARMIN_EMAIL / GARMIN_PASSWORD and try again.\n"
+        )
+    sys.exit(f"\nLogin failed: {exc}\n")
 
 
 def _print_token_bundle() -> None:
