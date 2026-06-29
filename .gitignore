@@ -1,0 +1,17 @@
+# Garmin login token (a credential — never commit)
+.garminconnect/
+*.garth
+
+# Local pulled data
+garmin/
+data.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Secrets
+.env

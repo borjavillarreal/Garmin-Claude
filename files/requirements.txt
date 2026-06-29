@@ -1,0 +1,6 @@
+# Garmin -> AI sync
+# The script is a thin wrapper around cyberjunky's python-garminconnect library.
+# https://github.com/cyberjunky/python-garminconnect
+
+garminconnect>=0.2.19
+requests>=2.31.0
