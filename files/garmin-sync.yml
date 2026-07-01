@@ -7,7 +7,12 @@ on:
   schedule:
     # 12:00 UTC = 06:00 in central Mexico (UTC-6, no DST). Cron is always UTC.
     - cron: "0 12 * * *"
-  workflow_dispatch: {}  # lets you click "Run workflow" manually
+  workflow_dispatch:      # lets you click "Run workflow" manually
+    inputs:
+      days:
+        description: "How many days back to pull (e.g. 30 to backfill history)"
+        required: false
+        default: "3"
 
 permissions:
   contents: write  # needed if you commit the garmin/ folder back (files sink)
@@ -36,9 +41,9 @@ jobs:
           GARMIN_INGEST_URL: ${{ secrets.GARMIN_INGEST_URL }}
           GARMIN_INGEST_SECRET: ${{ secrets.SESSION_LOG_SECRET }}
         run: |
-          # For the database path, swap the next line for:
-          #   python files/sync_garmin.py --days 3 --sink supabase
-          python files/sync_garmin.py --days 3 --sink files --out ./garmin
+          # Scheduled runs pull 3 days; a manual run can pass a bigger number.
+          # For the database path, swap files for supabase below.
+          python files/sync_garmin.py --days "${{ github.event.inputs.days || '3' }}" --sink files --out ./garmin
 
       - name: Commit updated data (files sink only)
         run: |
