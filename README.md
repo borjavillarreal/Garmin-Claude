@@ -43,7 +43,7 @@ you keep scripts and adjust the paths below.)
 
 ## Step 1: One-time setup (both paths)
 
-1. Install Python 3.11+ from python.org, then install the library:
+1. Install Python 3.12+ from python.org, then install the library:
 
    ```bash
    pip install -r requirements.txt

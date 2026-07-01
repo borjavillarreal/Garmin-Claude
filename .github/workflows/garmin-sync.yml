@@ -22,7 +22,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          # garminconnect >=0.3.3 (which has the widget login flow) needs 3.12+
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install -r files/requirements.txt
