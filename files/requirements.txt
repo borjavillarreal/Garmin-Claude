@@ -2,5 +2,7 @@
 # The script is a thin wrapper around cyberjunky's python-garminconnect library.
 # https://github.com/cyberjunky/python-garminconnect
 
-garminconnect>=0.2.19
+# 0.3.2+ adds the widget/portal web login flow that bypasses Garmin's
+# aggressive 429 rate limiting on the old mobile login endpoint.
+garminconnect>=0.3.6
 requests>=2.31.0

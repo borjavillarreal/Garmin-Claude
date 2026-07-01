@@ -78,25 +78,32 @@ def _login_interactive() -> "Garmin":
             '  export GARMIN_PASSWORD="your-password"'
         )
 
-    garmin = Garmin(email=email, password=password, return_on_mfa=True)
+    # garminconnect handles MFA via an interactive prompt by default, and its
+    # newer login() tries several strategies (mobile, then the widget/portal
+    # web flow that bypasses Garmin's 429 rate limiting).
+    garmin = Garmin(email=email, password=password)
     try:
-        result1, result2 = garmin.login()
-        if result1 == "needs_mfa":
-            code = input("Enter the 2FA / MFA code Garmin just sent you: ").strip()
-            garmin.resume_login(result2, code)
+        garmin.login()
     except Exception as exc:  # noqa: BLE001 - upstream raises many error types
         _explain_login_error(exc)
 
-    # If login did not actually authenticate, there is no token to save.
-    if getattr(garmin, "garth", None) is None:
-        _explain_login_error(
-            "login did not complete (no session/token was created)"
-        )
-
-    # Persist the token bundle to disk so future runs skip the password.
-    garmin.garth.dump(TOKENSTORE)
+    # Persist the token so future runs skip the password.
+    # garminconnect >=0.3 keeps auth on garmin.client (older versions used
+    # garmin.garth). Support whichever this install exposes.
+    try:
+        _auth_holder(garmin).dump(TOKENSTORE)
+    except Exception as exc:  # noqa: BLE001
+        _explain_login_error(f"logged in but could not save the token: {exc}")
     print(f"Login OK. Token saved to {TOKENSTORE}")
     return garmin
+
+
+def _auth_holder(garmin):
+    """Return the object that serializes auth tokens (.client on >=0.3, else .garth)."""
+    holder = getattr(garmin, "client", None) or getattr(garmin, "garth", None)
+    if holder is None:
+        _explain_login_error("login did not complete (no session/token was created)")
+    return holder
 
 
 def _explain_login_error(exc) -> None:
@@ -121,10 +128,10 @@ def _explain_login_error(exc) -> None:
     sys.exit(f"\nLogin failed: {exc}\n")
 
 
-def _print_token_bundle() -> None:
-    """Print the saved token directory as one base64 string (for Path A secret)."""
+def _print_token_bundle(garmin) -> None:
+    """Print the saved token as one base64 string (for the Path A secret)."""
     token_b64 = base64.b64encode(
-        garth_dumps().encode("utf-8")
+        _token_string(garmin).encode("utf-8")
     ).decode("utf-8")
     print("\n--- GARMIN_TOKEN_B64 (copy everything on the next line) ---")
     print(token_b64)
@@ -135,25 +142,23 @@ def _print_token_bundle() -> None:
     )
 
 
-def garth_dumps() -> str:
-    """Return the current garth session as a base64 string."""
-    import garth
-
-    return garth.client.dumps()
+def _token_string(garmin) -> str:
+    """Serialize the current auth tokens to a string."""
+    raw = _auth_holder(garmin).dumps()
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    return raw
 
 
 def _resume() -> "Garmin":
     """Log in using a saved token. Tries the base64 env var, then the token dir."""
     Garmin = _import_garmin()
+    garmin = Garmin()
+
     token_b64 = os.environ.get(TOKEN_B64_ENV)
     if token_b64:
-        import garth
-
         raw = base64.b64decode(token_b64).decode("utf-8")
-        garth.client.loads(raw)
-        garmin = Garmin()
-        garmin.garth = garth.client
-        garmin.display_name = garmin.garth.profile.get("displayName")
+        _auth_holder(garmin).loads(raw)
         return garmin
 
     if not Path(TOKENSTORE).expanduser().exists():
@@ -162,7 +167,6 @@ def _resume() -> "Garmin":
             "  python sync_garmin.py --login"
         )
 
-    garmin = Garmin()
     garmin.login(TOKENSTORE)
     return garmin
 
@@ -437,8 +441,8 @@ def main(argv=None) -> int:
     args = parse_args(argv)
 
     if args.login:
-        _login_interactive()
-        _print_token_bundle()
+        garmin = _login_interactive()
+        _print_token_bundle(garmin)
         return 0
 
     garmin = _resume()
