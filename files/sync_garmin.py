@@ -281,6 +281,51 @@ def collect_activities(garmin: "Garmin", start: date, end: date) -> list[dict]:
     return activities
 
 
+def collect_fitness(garmin: "Garmin", day: date) -> dict:
+    """Pull Garmin's own race predictions and VO2max for the given day."""
+    cdate = day.isoformat()
+    race = _safe(garmin.get_race_predictions, default=None)
+    maxm = _safe(garmin.get_max_metrics, cdate, default=None)
+
+    # Race predictions come back as a dict (or a list of daily dicts). Times are
+    # in seconds. Key names have shifted across Garmin versions, so try a few.
+    src = race[-1] if isinstance(race, list) and race else race
+    rp = {}
+    if isinstance(src, dict):
+        def g(*keys):
+            for k in keys:
+                v = src.get(k)
+                if v:
+                    return v
+            return None
+
+        rp = {
+            "sec_5k": g("time5K", "raceTime5K", "time_5K"),
+            "sec_10k": g("time10K", "raceTime10K", "time_10K"),
+            "sec_half": g("timeHalfMarathon", "raceTimeHalfMarathon"),
+            "sec_marathon": g("timeMarathon", "raceTimeMarathon"),
+        }
+
+    # VO2max: a list whose first item has "generic" (running) and "cycling".
+    mm = maxm[0] if isinstance(maxm, list) and maxm else maxm
+    vo2_run = vo2_bike = None
+    if isinstance(mm, dict):
+        generic = mm.get("generic") or {}
+        cycling = mm.get("cycling") or {}
+        vo2_run = generic.get("vo2MaxValue") or generic.get("vo2MaxPreciseValue")
+        vo2_bike = cycling.get("vo2MaxValue") or cycling.get("vo2MaxPreciseValue")
+
+    return {
+        "date": cdate,
+        "vo2max_run": _num(vo2_run),
+        "vo2max_bike": _num(vo2_bike),
+        "race_pred": rp,
+        # Keep the raw payloads so the dashboard can recover if key names differ.
+        "race_pred_raw": race,
+        "max_metrics_raw": maxm,
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Rendering / output
 # --------------------------------------------------------------------------- #
@@ -337,7 +382,12 @@ def _activity_slug(a: dict) -> str:
     return f"{day}-{safe}"
 
 
-def write_files(out: Path, wellness: list[dict], activities: list[dict]) -> None:
+def write_files(
+    out: Path,
+    wellness: list[dict],
+    activities: list[dict],
+    fitness: dict | None = None,
+) -> None:
     daily_dir = out / "daily"
     act_dir = out / "activities"
     daily_dir.mkdir(parents=True, exist_ok=True)
@@ -366,6 +416,8 @@ def write_files(out: Path, wellness: list[dict], activities: list[dict]) -> None
         store["wellness"][w["date"]] = w
     for a in activities:
         store["activities"][str(a["id"])] = a
+    if fitness and (fitness.get("race_pred") or fitness.get("vo2max_run")):
+        store["fitness"] = fitness
     store["updated_at"] = datetime.now().astimezone().isoformat()
     store_path.write_text(
         json.dumps(store, indent=2, sort_keys=True), encoding="utf-8"
@@ -467,13 +519,14 @@ def main(argv=None) -> int:
         wellness.append(collect_wellness(garmin, day))
         day += timedelta(days=1)
     activities = collect_activities(garmin, start, end)
+    fitness = collect_fitness(garmin, end)
 
     if args.dry_run:
         print_dry_run(wellness, activities)
         return 0
 
     if args.sink == "files":
-        write_files(Path(args.out).expanduser(), wellness, activities)
+        write_files(Path(args.out).expanduser(), wellness, activities, fitness)
     elif args.sink == "supabase":
         post_supabase(wellness, activities)
 
