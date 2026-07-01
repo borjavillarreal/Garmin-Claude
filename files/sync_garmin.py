@@ -281,30 +281,42 @@ def collect_activities(garmin: "Garmin", start: date, end: date) -> list[dict]:
     return activities
 
 
-def collect_fitness(garmin: "Garmin", day: date) -> dict:
-    """Pull Garmin's own race predictions and VO2max for the given day."""
-    cdate = day.isoformat()
-    race = _safe(garmin.get_race_predictions, default=None)
+def _parse_race(d) -> dict:
+    """Extract the four race-time predictions (seconds) from one Garmin record."""
+    if not isinstance(d, dict):
+        return {}
+    return {
+        "sec_5k": d.get("time5K"),
+        "sec_10k": d.get("time10K"),
+        "sec_half": d.get("timeHalfMarathon"),
+        "sec_marathon": d.get("timeMarathon"),
+    }
+
+
+def collect_fitness(garmin: "Garmin", start: date, end: date) -> dict:
+    """Pull Garmin's race predictions (latest + daily history) and VO2max."""
+    cdate = end.isoformat()
+    latest = _safe(garmin.get_race_predictions, default=None)
+    daily = _safe(
+        garmin.get_race_predictions,
+        start.isoformat(),
+        end.isoformat(),
+        "daily",
+        default=None,
+    )
     maxm = _safe(garmin.get_max_metrics, cdate, default=None)
 
-    # Race predictions come back as a dict (or a list of daily dicts). Times are
-    # in seconds. Key names have shifted across Garmin versions, so try a few.
-    src = race[-1] if isinstance(race, list) and race else race
-    rp = {}
-    if isinstance(src, dict):
-        def g(*keys):
-            for k in keys:
-                v = src.get(k)
-                if v:
-                    return v
-            return None
+    src = latest[-1] if isinstance(latest, list) and latest else latest
+    rp = _parse_race(src)
 
-        rp = {
-            "sec_5k": g("time5K", "raceTime5K", "time_5K"),
-            "sec_10k": g("time10K", "raceTime10K", "time_10K"),
-            "sec_half": g("timeHalfMarathon", "raceTimeHalfMarathon"),
-            "sec_marathon": g("timeMarathon", "raceTimeMarathon"),
-        }
+    # Daily history: {calendarDate: {sec_5k, sec_10k, sec_half, sec_marathon}}.
+    history = {}
+    items = daily if isinstance(daily, list) else ([daily] if daily else [])
+    for it in items:
+        if isinstance(it, dict) and it.get("calendarDate"):
+            pr = _parse_race(it)
+            if pr.get("sec_marathon"):
+                history[it["calendarDate"]] = pr
 
     # VO2max: a list whose first item has "generic" (running) and "cycling".
     mm = maxm[0] if isinstance(maxm, list) and maxm else maxm
@@ -320,8 +332,9 @@ def collect_fitness(garmin: "Garmin", day: date) -> dict:
         "vo2max_run": _num(vo2_run),
         "vo2max_bike": _num(vo2_bike),
         "race_pred": rp,
+        "history": history,
         # Keep the raw payloads so the dashboard can recover if key names differ.
-        "race_pred_raw": race,
+        "race_pred_raw": latest,
         "max_metrics_raw": maxm,
     }
 
@@ -416,8 +429,16 @@ def write_files(
         store["wellness"][w["date"]] = w
     for a in activities:
         store["activities"][str(a["id"])] = a
-    if fitness and (fitness.get("race_pred") or fitness.get("vo2max_run")):
-        store["fitness"] = fitness
+    if fitness:
+        has_pred = bool(fitness.get("race_pred", {}).get("sec_marathon"))
+        if has_pred or fitness.get("vo2max_run"):
+            store["fitness"] = {k: v for k, v in fitness.items() if k != "history"}
+        # Accumulate the prediction history so we can chart it over time.
+        hist = dict(fitness.get("history") or {})
+        if has_pred:
+            hist[fitness["date"]] = fitness["race_pred"]
+        if hist:
+            store.setdefault("fitness_history", {}).update(hist)
     store["updated_at"] = datetime.now().astimezone().isoformat()
     store_path.write_text(
         json.dumps(store, indent=2, sort_keys=True), encoding="utf-8"
@@ -519,7 +540,7 @@ def main(argv=None) -> int:
         wellness.append(collect_wellness(garmin, day))
         day += timedelta(days=1)
     activities = collect_activities(garmin, start, end)
-    fitness = collect_fitness(garmin, end)
+    fitness = collect_fitness(garmin, start, end)
 
     if args.dry_run:
         print_dry_run(wellness, activities)

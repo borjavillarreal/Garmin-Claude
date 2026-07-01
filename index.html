@@ -4,440 +4,452 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Mi panel de rendimiento</title>
+<title>Camino a Berlín · Panel de rendimiento</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg:#faf9f7; --card:#ffffff; --ink:#3a3734; --muted:#a7a29c; --line:#efeae4;
-    --run:#9fd0ab; --bike:#a6c8ec; --swim:#c4b6e6; --other:#f3c9a3;
-    --coral:#f2a9a9; --sleep:#bcc7ea; --hrv:#a9dccb; --ready:#d0bde8; --rose:#e9b9c1;
-    --shadow:0 1px 3px rgba(60,50,40,.05), 0 6px 20px rgba(60,50,40,.04);
+  :root{
+    --plane:#f4f4f0; --surface:#ffffff; --soft:#faf9f6;
+    --ink:#14130f; --ink2:#52514e; --muted:#8a8781; --grid:#e9e7df; --axis:#cdcbc3; --line:#eceae2;
+    --run:#3fae7a; --bike:#3f8fd6; --other:#e07d3c; --swim:#7d63cf;
+    --pred:#2a78d6; --goal:#0ca30c; --sleep:#3f8fd6; --hrv:#1baf7a; --rhr:#e34948; --ready:#7d63cf;
+    --warn:#e07d3c; --good:#0ca30c; --bad:#d03b3b;
+    --shadow:0 1px 2px rgba(30,25,15,.04), 0 4px 16px rgba(30,25,15,.04);
+    --r:14px;
   }
-  * { box-sizing:border-box; }
-  body {
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
-    font-weight:400; line-height:1.5; -webkit-font-smoothing:antialiased;
-  }
-  .wrap { max-width:1080px; margin:0 auto; padding:28px 20px 80px; }
-  header h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; }
-  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
-  .chips { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
-  .chip { background:var(--card); border:1px solid var(--line); border-radius:999px;
-          padding:5px 12px; font-size:12px; color:var(--ink); box-shadow:var(--shadow); }
-  .chip b { font-weight:600; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1360px;margin:0 auto;padding:16px 18px 60px}
 
-  h2.section { font-size:13px; text-transform:uppercase; letter-spacing:.08em;
-               color:var(--muted); font-weight:600; margin:38px 0 14px; }
+  /* top bar */
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .top h1{margin:0;font-size:16px;font-weight:650;letter-spacing:-.01em}
+  .top .u{color:var(--muted);font-size:11px}
+  .spacer{flex:1}
+  .cd{display:flex;align-items:baseline;gap:6px;background:var(--surface);border:1px solid var(--line);
+    border-radius:999px;padding:6px 13px;box-shadow:var(--shadow)}
+  .cd b{font-size:17px;font-weight:700}
+  .cd small{color:var(--muted)}
+  .goalchip{background:linear-gradient(135deg,#eafaf0,#eef6ff);border:1px solid #dfeede;border-radius:999px;
+    padding:6px 13px;box-shadow:var(--shadow);font-weight:600;color:#2b6b46}
 
-  /* Predictions hero */
-  .hero { background:var(--card); border:1px solid var(--line); border-radius:22px;
-          padding:26px; box-shadow:var(--shadow); }
-  .pred-main { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;
-               cursor:pointer; border-radius:14px; padding:8px; margin:-8px; transition:background .15s; }
-  .pred-main:hover { background:#faf7f3; }
-  .pred-main .lbl { font-size:14px; color:var(--muted); }
-  .pred-main .big { font-size:52px; font-weight:700; letter-spacing:-.02em; line-height:1;
-                    color:#5a5450; }
-  .pred-main .pace { font-size:13px; color:var(--muted); }
-  .pred-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:22px; }
-  .pill { background:#faf8f5; border:1px solid var(--line); border-radius:16px; padding:14px;
-          cursor:pointer; transition:transform .12s, box-shadow .12s; }
-  .pill:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
-  .pill .lbl { font-size:12px; color:var(--muted); }
-  .pill .val { font-size:24px; font-weight:600; margin-top:3px; color:#5a5450; }
-  .pill .hint { font-size:11px; color:var(--muted); margin-top:2px; }
-  .tri-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
-  .tri { background:linear-gradient(135deg,#f7f4ff,#f3f8ff); border:1px solid var(--line);
-         border-radius:16px; padding:16px; cursor:pointer; transition:transform .12s, box-shadow .12s; }
-  .tri:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
-  .tri .lbl { font-size:12px; color:#8a83b0; font-weight:600; }
-  .tri .val { font-size:28px; font-weight:700; margin-top:4px; color:#5a5480; }
-  .tri .hint { font-size:11px; color:var(--muted); margin-top:3px; }
+  .section{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    font-weight:700;margin:22px 2px 10px}
 
-  .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
-  .metric { background:var(--card); border:1px solid var(--line); border-radius:16px;
-            padding:15px 16px; box-shadow:var(--shadow); }
-  .metric .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
-  .metric .val { font-size:26px; font-weight:600; margin-top:4px; }
-  .metric .val small { font-size:13px; color:var(--muted); font-weight:400; }
+  /* layout grids */
+  .row{display:grid;gap:14px}
+  .hero{grid-template-columns:300px 1fr}
+  @media(max-width:820px){.hero{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;box-shadow:var(--shadow)}
 
-  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:18px;
-           padding:16px 18px; box-shadow:var(--shadow); }
-  .panel h3 { margin:0 0 12px; font-size:14px; font-weight:600; }
-  canvas { max-height:250px; }
+  /* hero prediction */
+  .predcard{cursor:pointer;background:linear-gradient(150deg,#f7fbff,#fbf7ff);transition:transform .12s,box-shadow .12s}
+  .predcard:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(30,25,15,.08)}
+  .predcard .k{font-size:11px;color:var(--muted);font-weight:600}
+  .predcard .mara{font-size:52px;font-weight:750;letter-spacing:-.03em;line-height:.95;color:#22406b;margin:4px 0 2px}
+  .predcard .pace{font-size:12px;color:var(--ink2)}
+  .gap{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+  .gap .lbl{font-size:11px;color:var(--muted)}
+  .gap .v{font-size:20px;font-weight:700}
+  .tap{font-size:10.5px;color:var(--muted);margin-top:10px}
 
-  .insights p { margin:0 0 10px; font-size:14px; }
-  .insights .tag { display:inline-block; width:8px; height:8px; border-radius:50%;
-                   margin-right:8px; vertical-align:middle; }
+  canvas{width:100%!important}
+  .chartbox{position:relative;height:230px}
+  .chartbox.sm{height:150px}
+  .chartbox.xs{height:132px}
 
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th,td { text-align:left; padding:9px 6px; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:500; font-size:12px; }
-  .sportdot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; }
+  /* dense stat strip */
+  .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  @media(max-width:820px){.strip{grid-template-columns:repeat(3,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}
+  .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .stat .v{font-size:20px;font-weight:650;margin-top:2px}
+  .stat .v small{font-size:11px;color:var(--muted);font-weight:400}
 
-  .coach { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
-  .coach .panel .big { font-size:30px; font-weight:700; }
-  .coach .desc { font-size:12px; color:var(--muted); margin-top:6px; }
-  .bar-track { height:8px; background:var(--line); border-radius:6px; overflow:hidden; margin-top:10px; }
-  .bar-fill { height:100%; border-radius:6px; }
+  /* charts grid */
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:980px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.g3,.g2,.g4{grid-template-columns:1fr}}
+  .card h3{margin:0 0 8px;font-size:12px;font-weight:650;color:var(--ink2)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--ink2);margin-bottom:4px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
+  .legend i.dash{width:14px;height:0;border-top:2px dashed var(--goal);border-radius:0}
 
-  #err { display:none; background:#fff4f4; border:1px solid #f3d4d4; color:#a55;
-         padding:16px; border-radius:14px; }
+  /* analysis */
+  .analysis p{margin:0 0 9px;font-size:13px}
+  .analysis p:last-child{margin:0}
+  .analysis .d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .analysis b{font-weight:650}
 
-  /* Modal */
-  .backdrop { position:fixed; inset:0; background:rgba(50,44,40,.35); display:none;
-              align-items:center; justify-content:center; padding:20px; z-index:50; }
-  .backdrop.open { display:flex; }
-  .modal { background:var(--card); border-radius:20px; padding:24px; max-width:460px; width:100%;
-           box-shadow:0 20px 60px rgba(0,0,0,.2); max-height:85vh; overflow:auto; }
-  .modal h3 { margin:0 0 4px; font-size:20px; }
-  .modal .msub { color:var(--muted); font-size:13px; margin-bottom:16px; }
-  .modal .rowline { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line);
-                    font-size:14px; }
-  .modal .rowline span:last-child { font-weight:600; }
-  .modal .note { font-size:12px; color:var(--muted); margin-top:14px; line-height:1.5; }
-  .modal .close { float:right; cursor:pointer; color:var(--muted); font-size:20px; line-height:1;
-                  border:none; background:none; }
-  .muted { color:var(--muted); }
+  /* coach */
+  .coach .big{font-size:26px;font-weight:750}
+  .coach .desc{font-size:11px;color:var(--muted);margin-top:5px}
+  .track{height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:8px}
+  .fill{height:100%;border-radius:6px}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{font-variant-numeric:tabular-nums}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+
+  #err{display:none;background:#fff4f4;border:1px solid #f2d6d6;color:#a55;padding:14px;border-radius:12px}
+
+  .backdrop{position:fixed;inset:0;background:rgba(30,25,15,.4);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .backdrop.open{display:flex}
+  .modal{background:var(--surface);border-radius:18px;padding:20px;max-width:620px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.25);max-height:88vh;overflow:auto}
+  .modal h3{margin:0 0 2px;font-size:17px}
+  .modal .msub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .modal .close{float:right;cursor:pointer;color:var(--muted);font-size:22px;background:none;border:none;line-height:1}
+  .predgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:6px}
+  .pill{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;transition:transform .1s}
+  .pill:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .pill .l{font-size:10.5px;color:var(--muted)}
+  .pill .v{font-size:18px;font-weight:700;margin-top:2px}
+  .pill .h{font-size:10px;color:var(--muted)}
+  .rowline{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rowline span:last-child{font-weight:650;font-variant-numeric:tabular-nums}
+  .note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5}
+  .muted{color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>🏅 Mi panel de rendimiento</h1>
-    <div class="sub" id="updated">Cargando…</div>
-    <div class="chips" id="chips"></div>
-  </header>
+  <div class="top">
+    <div>
+      <h1>🏁 Camino a Berlín</h1>
+      <div class="u" id="updated">Cargando…</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="goalchip">🎯 Meta 2:50 · 4:01/km</div>
+    <div class="cd"><b class="num" id="cd_days">—</b><small>días a Berlín · 27 sep 2026</small></div>
+  </div>
 
   <div id="err"></div>
 
-  <!-- PREDICTIONS -->
-  <h2 class="section">Predicciones de carrera</h2>
-  <div class="hero" id="hero"></div>
+  <!-- HERO -->
+  <div class="row hero">
+    <div class="card predcard" id="predcard">
+      <div class="k">MARATÓN PROYECTADO</div>
+      <div class="mara num" id="mara">—</div>
+      <div class="pace num" id="marapace"></div>
+      <div class="gap"><div><div class="lbl">Falta para 2:50</div><div class="v num" id="gapv">—</div></div>
+        <div style="text-align:right"><div class="lbl">Tendencia</div><div class="v num" id="trendv">—</div></div></div>
+      <div class="tap">↗ toca para ver el historial y las demás predicciones</div>
+    </div>
+    <div class="card">
+      <h3>Proyección de maratón vs. trayectoria a la meta</h3>
+      <div class="legend"><span><i style="background:var(--pred)"></i>Proyección Garmin</span>
+        <span><i class="dash"></i>Trayectoria ideal a 2:50</span></div>
+      <div class="chartbox"><canvas id="c_traj"></canvas></div>
+    </div>
+  </div>
 
-  <!-- INSIGHTS -->
-  <h2 class="section">Qué dicen tus datos</h2>
-  <div class="panel insights" id="insights"></div>
+  <!-- ANALYSIS -->
+  <div class="section">Qué dicen tus datos · análisis</div>
+  <div class="card analysis" id="analysis"></div>
 
   <!-- TODAY -->
-  <h2 class="section">Hoy</h2>
-  <div class="cards" id="today"></div>
+  <div class="section">Hoy</div>
+  <div class="strip" id="today"></div>
 
   <!-- TRAINING -->
-  <h2 class="section">Entrenamiento semanal</h2>
-  <div class="grid" id="training"></div>
+  <div class="section">Entrenamiento semanal</div>
+  <div class="row g3" id="train1"></div>
+  <div class="row g3" id="train2" style="margin-top:14px"></div>
 
-  <!-- COACHING -->
-  <h2 class="section">Marcos de entrenamiento</h2>
-  <div class="coach" id="coach"></div>
+  <!-- COACH -->
+  <div class="section">Marcos de entrenamiento</div>
+  <div class="row g3" id="coach"></div>
 
   <!-- WELLNESS -->
-  <h2 class="section">Recuperación</h2>
-  <div class="grid" id="wellness"></div>
+  <div class="section">Recuperación</div>
+  <div class="row g4" id="wellness"></div>
 
   <!-- ACTIVITIES -->
-  <h2 class="section">Últimos entrenamientos</h2>
-  <div class="panel">
-    <table id="acts"><thead><tr>
-      <th>Fecha</th><th>Actividad</th><th>Dur</th><th>Dist</th><th>Ritmo/vel</th><th>HR</th><th>D+</th>
-    </tr></thead><tbody></tbody></table>
-  </div>
+  <div class="section">Últimos entrenamientos</div>
+  <div class="card"><table id="acts"><thead><tr>
+    <th>Fecha</th><th>Actividad</th><th class="num">Dur</th><th class="num">Dist</th><th class="num">Ritmo/vel</th><th class="num">HR</th><th class="num">D+</th>
+  </tr></thead><tbody></tbody></table></div>
 </div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 
 <script>
-const C = { run:"#7fc490", bike:"#8fb8e6", swim:"#b5a3e0", other:"#f0b98a",
-            coral:"#ef9e9e", sleep:"#a9b8e6", hrv:"#8fd3bd", ready:"#c3a9e6", rose:"#e2a3ae" };
+const C={run:"#3fae7a",bike:"#3f8fd6",other:"#e07d3c",swim:"#7d63cf",
+  pred:"#2a78d6",goal:"#0ca30c",sleep:"#3f8fd6",hrv:"#1baf7a",rhr:"#e34948",ready:"#7d63cf"};
+const GOAL={date:"2026-09-27",sec:10200,paceKm:241};
+const INK="#52514e",MUTED="#8a8781",GRID="#e9e7df";
 
-/* ---------- helpers ---------- */
-const num = (n,d=0)=> (n==null||Number.isNaN(n))?null:Number(n);
-const fmt = (n,d=0)=> (n==null||Number.isNaN(n))?"—":Number(n).toLocaleString("es-MX",{maximumFractionDigits:d});
-function fmtTime(sec){ if(!sec) return "—"; sec=Math.round(sec);
-  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
-  return h>0 ? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`
-             : `${m}:${String(s).padStart(2,"0")}`; }
-function fmtPace(secPerKm){ if(!secPerKm) return "—"; const m=Math.floor(secPerKm/60), s=Math.round(secPerKm%60);
-  return `${m}:${String(s).padStart(2,"0")}/km`; }
-function mondayOf(dateStr){ const d=new Date(dateStr.slice(0,10)+"T00:00:00");
-  const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd);
+const num=(n,d=0)=>(n==null||Number.isNaN(n))?null:Number(n);
+const fmt=(n,d=0)=>(n==null||Number.isNaN(n))?"—":Number(n).toLocaleString("es-MX",{maximumFractionDigits:d});
+function fmtTime(s){ if(!s) return "—"; s=Math.round(s); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return h>0?`${h}:${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`:`${m}:${String(x).padStart(2,"0")}`; }
+function fmtPace(s){ if(!s) return "—"; const m=Math.floor(s/60),x=Math.round(s%60); return `${m}:${String(x).padStart(2,"0")}/km`; }
+function mondayOf(ds){ const d=new Date(ds.slice(0,10)+"T00:00:00"); const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
-const weekLabel = k => { const [y,m,d]=k.split("-"); return `${d}/${m}`; };
-function sportOf(type){ type=(type||"").toLowerCase();
-  if(/run|treadmill/.test(type)) return "run";
-  if(/cycl|bik|ride/.test(type)) return "bike";
-  if(/swim/.test(type)) return "swim";
-  return "other"; }
+const wkLabel=k=>{const [,m,d]=k.split("-");return `${d}/${m}`;};
+function sportOf(t){ t=(t||"").toLowerCase();
+  if(/run|treadmill/.test(t))return"run"; if(/cycl|bik|ride/.test(t))return"bike"; if(/swim/.test(t))return"swim"; return"other"; }
+const avg=(a,k)=>{const v=a.map(x=>x[k]).filter(x=>x!=null);return v.length?v.reduce((s,b)=>s+b,0)/v.length:null;};
 
-let STORE=null;
-const baseChartOpts = (extra={}) => ({
-  responsive:true, maintainAspectRatio:false,
-  plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:"#4a4440" } },
-  scales:{ x:{ grid:{display:false}, ticks:{color:"#a7a29c",maxRotation:0,autoSkip:true,maxTicksLimit:8} },
-           y:{ grid:{color:"#f0ece7"}, ticks:{color:"#a7a29c"}, beginAtZero:true } },
-  ...extra });
-
-function lineChart(el,labels,data,color){
-  new Chart(el,{ type:"line", data:{ labels, datasets:[{ data, borderColor:color,
-    backgroundColor:color+"33", tension:.35, fill:true, pointRadius:2, borderWidth:2, spanGaps:true }]},
-    options: baseChartOpts({scales:{x:{grid:{display:false},ticks:{color:"#a7a29c",maxRotation:0,autoSkip:true,maxTicksLimit:8}},
-      y:{grid:{color:"#f0ece7"},ticks:{color:"#a7a29c"},beginAtZero:false}}}) });
+const axis=(ticks={})=>({grid:{color:GRID,drawTicks:false},border:{display:false},ticks:{color:MUTED,font:{size:10},...ticks}});
+function lineChart(el,labels,data,color,fillArea=true){
+  return new Chart(el,{type:"line",data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+"1f",
+    tension:.35,fill:fillArea,pointRadius:0,pointHoverRadius:4,borderWidth:2,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723"}},
+      interaction:{mode:"index",intersect:false},
+      scales:{x:{...axis({maxRotation:0,autoSkip:true,maxTicksLimit:7}),grid:{display:false}},y:{...axis(),beginAtZero:false}}}});
 }
 function barChart(el,labels,datasets,stacked){
-  new Chart(el,{ type:"bar", data:{ labels, datasets },
-    options: baseChartOpts({ plugins:{legend:{display:datasets.length>1, labels:{color:"#7a736c",boxWidth:10,font:{size:11}}},
-      tooltip:{backgroundColor:"#4a4440"}},
-      scales:{ x:{ stacked, grid:{display:false}, ticks:{color:"#a7a29c"} },
-               y:{ stacked, grid:{color:"#f0ece7"}, ticks:{color:"#a7a29c"}, beginAtZero:true } } }) });
+  return new Chart(el,{type:"bar",data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:datasets.length>1,position:"bottom",labels:{color:INK,boxWidth:9,font:{size:10},padding:8}},
+        tooltip:{backgroundColor:"#2a2723"}},
+      scales:{x:{stacked,...axis(),grid:{display:false}},y:{stacked,...axis(),beginAtZero:true}}}});
+}
+const dset=(label,data,color)=>({label,data,backgroundColor:color,borderRadius:4,borderSkipped:false,maxBarThickness:26});
+
+/* predictions */
+function riegel(t1,d1,d2){return t1*Math.pow(d2/d1,1.06);}
+function runPreds(acts,fitness){
+  const rp=(fitness&&fitness.race_pred)||{};
+  let p={5:rp.sec_5k,10:rp.sec_10k,21.0975:rp.sec_half,42.195:rp.sec_marathon},src="Garmin";
+  if(!Object.values(p).some(Boolean)){
+    const runs=acts.filter(a=>sportOf(a.type)==="run"&&a.distance_km>=3&&a.duration_min);
+    if(runs.length){ let b=null; for(const r of runs){const pace=r.duration_min*60/r.distance_km; if(!b||pace<b.p)b={p:pace,r};}
+      const t1=b.r.duration_min*60,d1=b.r.distance_km;
+      p={5:riegel(t1,d1,5),10:riegel(t1,d1,10),21.0975:riegel(t1,d1,21.0975),42.195:riegel(t1,d1,42.195)};
+      src="Estimado (Riegel, tu mejor carrera reciente)"; } else src=null;
+  }
+  return {p,src};
+}
+function medSpeed(acts,sp){const v=acts.filter(a=>sportOf(a.type)===sp&&a.avg_speed_kmh).map(a=>a.avg_speed_kmh).sort((a,b)=>a-b);
+  return v.length?v[Math.floor(v.length/2)]:null;}
+function ironman(acts,p){
+  const calc=(sK,bK,rK,c)=>{const a=[];
+    let sw=medSpeed(acts,"swim"); if(!sw){sw=2.77;a.push("Natación: sin datos, asumí 2:10/100m");}
+    let bk=medSpeed(acts,"bike"); if(!bk){bk=30;a.push("Ciclismo: sin datos, asumí 30 km/h");}
+    let rp=p&&p[c.ref]?p[c.ref]/c.refKm:null; if(!rp){rp=360;a.push("Carrera: asumí 6:00/km");}
+    rp*=c.pen; const swim=sK/sw*3600,bike=bK/(bk*c.bf)*3600,run=rK*rp;
+    return {swim,bike,run,trans:c.t,total:swim+bike+run+c.t,a};};
+  return {full:calc(3.8,180,42.195,{bf:.82,ref:42.195,refKm:42.195,pen:1.14,t:720}),
+          half:calc(1.9,90,21.0975,{bf:.9,ref:21.0975,refKm:21.0975,pen:1.08,t:480})};
+}
+function marathonHistory(store){
+  const fh=store.fitness_history||{};
+  let pts=Object.entries(fh).map(([d,p])=>({date:d,sec:p.sec_marathon})).filter(x=>x.sec);
+  if(!pts.length&&store.fitness&&store.fitness.race_pred&&store.fitness.race_pred.sec_marathon)
+    pts=[{date:store.fitness.date,sec:store.fitness.race_pred.sec_marathon}];
+  return pts.sort((a,b)=>a.date.localeCompare(b.date));
 }
 
-/* ---------- predictions ---------- */
-function riegel(t1,d1,d2){ return t1 * Math.pow(d2/d1, 1.06); }
-function runPredictions(acts, fitness){
-  const rp = (fitness&&fitness.race_pred)||{};
-  let src="Garmin", p={ 5:rp.sec_5k, 10:rp.sec_10k, 21.0975:rp.sec_half, 42.195:rp.sec_marathon };
-  const have = Object.values(p).some(Boolean);
-  if(!have){
-    // Riegel fallback from the best recent run (>=3 km)
-    const runs = acts.filter(a=>sportOf(a.type)==="run" && a.distance_km>=3 && a.duration_min);
-    if(runs.length){
-      let best=null;
-      for(const r of runs){ const pace=r.duration_min*60/r.distance_km; if(!best||pace<best.pace) best={pace,r}; }
-      const t1=best.r.duration_min*60, d1=best.r.distance_km;
-      p={ 5:riegel(t1,d1,5), 10:riegel(t1,d1,10), 21.0975:riegel(t1,d1,21.0975), 42.195:riegel(t1,d1,42.195) };
-      src="Estimado (fórmula de Riegel, tu mejor carrera reciente)";
-    } else { src=null; }
-  }
-  return { p, src };
-}
-function medianSpeed(acts, sport){
-  const v = acts.filter(a=>sportOf(a.type)===sport && a.avg_speed_kmh).map(a=>a.avg_speed_kmh).sort((a,b)=>a-b);
-  return v.length ? v[Math.floor(v.length/2)] : null;
-}
-function ironman(acts, runP){
-  // returns {mode: {swim,bike,run,trans,total, assumptions[]}}
-  function calc(swimKm,bikeKm,runKm,cfg){
-    const a=[];
-    let swimKmh=medianSpeed(acts,"swim"); if(!swimKmh){ swimKmh=2.77; a.push("Natación: sin datos, asumí 2:10/100m"); }
-    let bikeKmh=medianSpeed(acts,"bike"); if(!bikeKmh){ bikeKmh=30; a.push("Ciclismo: sin datos, asumí 30 km/h"); }
-    const bikeSust = bikeKmh*cfg.bikeFactor;         // sustainable IM effort < short-ride avg
-    let runPaceKm = runP && runP[cfg.runRef] ? runP[cfg.runRef]/cfg.runRefKm : null;
-    if(!runPaceKm){ runPaceKm=6*60; a.push("Carrera: sin predicción, asumí 6:00/km"); }
-    runPaceKm *= cfg.runPenalty;                     // off-the-bike fatigue
-    const swim = (swimKm/swimKmh)*3600;              // seconds
-    const bike = (bikeKm/bikeSust)*3600;
-    const run  = runKm*runPaceKm;
-    const trans = cfg.trans;
-    return { swim, bike, run, trans, total:swim+bike+run+trans, a, swimKmh, bikeSust, runPaceKm };
-  }
-  return {
-    full: calc(3.8,180,42.195,{bikeFactor:0.82, runRef:42.195, runRefKm:42.195, runPenalty:1.14, trans:12*60}),
-    half: calc(1.9,90,21.0975,{bikeFactor:0.90, runRef:21.0975, runRefKm:21.0975, runPenalty:1.08, trans:8*60}),
-  };
-}
-
-/* ---------- modal ---------- */
-function openModal(html){ document.getElementById("modal").innerHTML=html;
-  document.getElementById("backdrop").classList.add("open"); }
-function closeModal(){ document.getElementById("backdrop").classList.remove("open"); }
-document.getElementById("backdrop").addEventListener("click",e=>{ if(e.target.id==="backdrop") closeModal(); });
+/* modal */
+function openModal(h){document.getElementById("modal").innerHTML=h;document.getElementById("backdrop").classList.add("open");}
+function closeModal(){document.getElementById("backdrop").classList.remove("open");}
+document.getElementById("backdrop").addEventListener("click",e=>{if(e.target.id==="backdrop")closeModal();});
 
 function runModal(dist,label,sec,src){
-  const pace = sec/dist;
-  openModal(`<button class="close" onclick="closeModal()">×</button>
-    <h3>${label}</h3><div class="msub">Predicción de tiempo</div>
-    <div class="rowline"><span>Tiempo objetivo</span><span>${fmtTime(sec)}</span></div>
+  src=(src===undefined)?WIN_SRC:src;
+  const pace=sec/dist;
+  openModal(`<button class="close" onclick="closeModal()">×</button><h3>${label}</h3><div class="msub">Predicción de tiempo</div>
+    <div class="rowline"><span>Tiempo</span><span>${fmtTime(sec)}</span></div>
     <div class="rowline"><span>Ritmo</span><span>${fmtPace(pace)}</span></div>
-    <div class="rowline"><span>Distancia</span><span>${dist} km</span></div>
     <div class="rowline"><span>Velocidad</span><span>${fmt(3600/pace,1)} km/h</span></div>
-    <div class="note"><b>Fuente:</b> ${src||"—"}.<br>
-    Las predicciones asumen buen descanso, terreno plano y buen clima. Úsalas como referencia, no como garantía.</div>`);
+    <div class="note"><b>Fuente:</b> ${src||"—"}. Asume descanso, terreno plano y buen clima.</div>`);
 }
-function imModal(key,m){
-  const title = key==="full" ? "Ironman completo" : "Ironman 70.3";
-  const dist = key==="full" ? "3.8 km nado · 180 km bici · 42.2 km carrera" : "1.9 km nado · 90 km bici · 21.1 km carrera";
-  const notes = m.a.length ? m.a.map(x=>"• "+x).join("<br>") : "Todos los segmentos usan tus datos reales recientes.";
-  openModal(`<button class="close" onclick="closeModal()">×</button>
-    <h3>${title}</h3><div class="msub">${dist}</div>
+function imModal(k,m){
+  const t=k==="full"?"Ironman completo":"Ironman 70.3";
+  const dist=k==="full"?"3.8 km · 180 km · 42.2 km":"1.9 km · 90 km · 21.1 km";
+  const notes=m.a.length?m.a.map(x=>"• "+x).join("<br>"):"Todos los segmentos usan tus datos reales.";
+  openModal(`<button class="close" onclick="closeModal()">×</button><h3>${t}</h3><div class="msub">${dist}</div>
     <div class="rowline"><span>🏊 Natación</span><span>${fmtTime(m.swim)}</span></div>
     <div class="rowline"><span>🚴 Ciclismo</span><span>${fmtTime(m.bike)}</span></div>
     <div class="rowline"><span>🏃 Carrera</span><span>${fmtTime(m.run)}</span></div>
     <div class="rowline"><span>🔁 Transiciones</span><span>${fmtTime(m.trans)}</span></div>
-    <div class="rowline" style="border:none"><span><b>Total estimado</b></span><span><b>${fmtTime(m.total)}</b></span></div>
-    <div class="note"><b>Estimación aproximada.</b> Se calcula con el ritmo sostenible de cada deporte (bici y carrera ajustadas por fatiga de larga distancia) más transiciones.<br><br><b>Supuestos:</b><br>${notes}</div>`);
+    <div class="rowline" style="border:none"><span><b>Total estimado</b></span><span>${fmtTime(m.total)}</span></div>
+    <div class="note"><b>Estimación aproximada.</b> Ritmos sostenibles por deporte (bici y carrera ajustadas por fatiga) + transiciones.<br><br><b>Supuestos:</b><br>${notes}</div>`);
+}
+function marathonModal(hist,p,src,im){
+  openModal(`<button class="close" onclick="closeModal()">×</button>
+    <h3>Maratón · ${fmtTime(p[42.195])}</h3><div class="msub">${src?("Fuente: "+src):""} · ritmo ${p[42.195]?fmtPace(p[42.195]/42.195):"—"}</div>
+    <div class="legend"><span><i style="background:var(--pred)"></i>Proyección</span><span><i class="dash"></i>Meta 2:50</span></div>
+    <div class="chartbox sm"><canvas id="c_hist"></canvas></div>
+    <div class="section" style="margin:16px 0 8px">Otras predicciones</div>
+    <div class="predgrid">
+      <div class="pill" onclick="runModal(21.0975,'Medio maratón',${p[21.0975]||0})"><div class="l">½ Maratón</div><div class="v num">${fmtTime(p[21.0975])}</div><div class="h num">${p[21.0975]?fmtPace(p[21.0975]/21.0975):"—"}</div></div>
+      <div class="pill" onclick="runModal(10,'10K',${p[10]||0})"><div class="l">10K</div><div class="v num">${fmtTime(p[10])}</div><div class="h num">${p[10]?fmtPace(p[10]/10):"—"}</div></div>
+      <div class="pill" onclick="runModal(5,'5K',${p[5]||0})"><div class="l">5K</div><div class="v num">${fmtTime(p[5])}</div><div class="h num">${p[5]?fmtPace(p[5]/5):"—"}</div></div>
+    </div>
+    <div class="predgrid" style="grid-template-columns:1fr 1fr;margin-top:9px">
+      <div class="pill" onclick='imModal("full",WIN_IM.full)'><div class="l">🏊🚴🏃 Ironman completo</div><div class="v num">${fmtTime(im.full.total)}</div><div class="h">estimación</div></div>
+      <div class="pill" onclick='imModal("half",WIN_IM.half)'><div class="l">🏊🚴🏃 Ironman 70.3</div><div class="v num">${fmtTime(im.half.total)}</div><div class="h">estimación</div></div>
+    </div>`);
+  // history chart (daily)
+  const labels=hist.map(h=>h.date.slice(5)), data=hist.map(h=>h.sec);
+  new Chart(document.getElementById("c_hist"),{type:"line",
+    data:{labels,datasets:[
+      {label:"Proyección",data,borderColor:C.pred,backgroundColor:C.pred+"1f",tension:.3,pointRadius:2,borderWidth:2,fill:true},
+      {label:"Meta",data:labels.map(()=>GOAL.sec),borderColor:C.goal,borderDash:[5,4],pointRadius:0,borderWidth:1.5,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723",
+      callbacks:{label:c=>fmtTime(c.raw)}}},
+      scales:{x:{...axis({maxRotation:0,autoSkip:true,maxTicksLimit:8}),grid:{display:false}},
+        y:{...axis({callback:v=>fmtTime(v)}),reverse:true}}}});
 }
 
-/* ---------- main render ---------- */
+let WIN_IM=null, WIN_SRC=null;
 async function load(){
   let s;
-  try{ const r=await fetch("garmin/data.json",{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); s=await r.json(); }
-  catch(e){ const b=document.getElementById("err"); b.style.display="block";
-    b.innerHTML="No pude cargar <code>garmin/data.json</code> ("+e.message+"). Si lo abriste con doble clic, usa un servidor local: <code>python3 -m http.server 8000</code>.";
-    document.getElementById("updated").textContent=""; return; }
-  STORE=s;
+  try{const r=await fetch("garmin/data.json",{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);s=await r.json();}
+  catch(e){const b=document.getElementById("err");b.style.display="block";
+    b.innerHTML="No pude cargar <code>garmin/data.json</code> ("+e.message+"). Si lo abriste con doble clic, usa <code>python3 -m http.server 8000</code>.";
+    document.getElementById("updated").textContent="";return;}
 
   const wellness=Object.values(s.wellness||{}).sort((a,b)=>a.date.localeCompare(b.date));
   const acts=Object.values(s.activities||{}).sort((a,b)=>String(b.start).localeCompare(String(a.start)));
-  const fitness=s.fitness||{};
-  const last=wellness[wellness.length-1]||{};
+  const fitness=s.fitness||{}; const last=wellness[wellness.length-1]||{};
+  const {p,src}=runPreds(acts,fitness); const im=ironman(acts,p); WIN_IM=im; WIN_SRC=src;
+  const hist=marathonHistory(s);
 
-  document.getElementById("updated").textContent =
-    `Actualizado: ${s.updated_at?new Date(s.updated_at).toLocaleString("es-MX"):"—"} · ${wellness.length} días · ${acts.length} entrenamientos`;
+  // countdown
+  const today=new Date(); const race=new Date(GOAL.date+"T00:00:00");
+  const days=Math.max(0,Math.ceil((race-today)/86400000));
+  document.getElementById("cd_days").textContent=days;
+  document.getElementById("updated").textContent=`Actualizado ${s.updated_at?new Date(s.updated_at).toLocaleDateString("es-MX"):"—"} · ${wellness.length} días · ${acts.length} entrenamientos`;
 
-  // chips (VO2max)
-  const chips=[];
-  if(fitness.vo2max_run) chips.push(`<span class="chip">VO₂max carrera <b>${fmt(fitness.vo2max_run,1)}</b></span>`);
-  if(fitness.vo2max_bike) chips.push(`<span class="chip">VO₂max bici <b>${fmt(fitness.vo2max_bike,1)}</b></span>`);
-  document.getElementById("chips").innerHTML=chips.join("");
+  // hero prediction
+  const mara=p[42.195];
+  document.getElementById("mara").textContent=fmtTime(mara);
+  document.getElementById("marapace").textContent=mara?`${fmtPace(mara/42.195)} · ${src&&src.startsWith("Garmin")?"Garmin":"estimado"}`:"";
+  const gap=mara?mara-GOAL.sec:null;
+  document.getElementById("gapv").textContent=gap!=null?(gap>0?"−"+fmtTime(gap):"¡logrado!"):"—";
+  document.getElementById("gapv").style.color=gap>0?"var(--warn)":"var(--good)";
+  // trend vs oldest history
+  let trend=null; if(hist.length>=2){trend=hist[0].sec-hist[hist.length-1].sec;}
+  const tv=document.getElementById("trendv");
+  tv.textContent=trend==null?"—":(trend>0?"−"+fmtTime(trend):trend<0?"+"+fmtTime(-trend):"estable");
+  tv.style.color=trend>0?"var(--good)":trend<0?"var(--bad)":"var(--muted)";
+  document.getElementById("predcard").onclick=()=>marathonModal(hist,p,src,im);
 
-  /* ---- predictions ---- */
-  const { p, src } = runPredictions(acts, fitness);
-  const im = ironman(acts, p);
-  const marathon = p[42.195];
-  document.getElementById("hero").innerHTML = `
-    <div class="pred-main" id="pm">
-      <div><div class="lbl">Maratón (42.2 km)</div>
-        <div class="big">${fmtTime(marathon)}</div>
-        <div class="pace">${marathon?fmtPace(marathon/42.195):""} ${src?"· "+ (src.startsWith("Garmin")?"predicción Garmin":"estimado"):""}</div></div>
-    </div>
-    <div class="pred-row">
-      <div class="pill" data-d="21.0975" data-l="Medio maratón"><div class="lbl">½ Maratón · 21.1 km</div><div class="val">${fmtTime(p[21.0975])}</div><div class="hint">${p[21.0975]?fmtPace(p[21.0975]/21.0975):"—"}</div></div>
-      <div class="pill" data-d="10" data-l="10K"><div class="lbl">10K</div><div class="val">${fmtTime(p[10])}</div><div class="hint">${p[10]?fmtPace(p[10]/10):"—"}</div></div>
-      <div class="pill" data-d="5" data-l="5K"><div class="lbl">5K</div><div class="val">${fmtTime(p[5])}</div><div class="hint">${p[5]?fmtPace(p[5]/5):"—"}</div></div>
-    </div>
-    <div class="tri-row">
-      <div class="tri" id="imfull"><div class="lbl">🏊🚴🏃 Ironman completo</div><div class="val">${fmtTime(im.full.total)}</div><div class="hint">estimación · toca para ver desglose</div></div>
-      <div class="tri" id="imhalf"><div class="lbl">🏊🚴🏃 Ironman 70.3</div><div class="val">${fmtTime(im.half.total)}</div><div class="hint">estimación · toca para ver desglose</div></div>
-    </div>`;
-  document.getElementById("pm").onclick=()=>marathon&&runModal(42.195,"Maratón",marathon,src);
-  document.querySelectorAll(".pill").forEach(el=>el.onclick=()=>{ const d=parseFloat(el.dataset.d);
-    if(p[d]) runModal(d,el.dataset.l,p[d],src); });
-  document.getElementById("imfull").onclick=()=>imModal("full",im.full);
-  document.getElementById("imhalf").onclick=()=>imModal("half",im.half);
+  /* trajectory chart (weekly) */
+  const byWeek={}; hist.forEach(h=>byWeek[mondayOf(h.date)]=h.sec);
+  const nowMon=mondayOf(today.toISOString()), raceMon=mondayOf(GOAL.date);
+  const startMon=Object.keys(byWeek).sort()[0]||nowMon;
+  const weeks=[]; let d=new Date(startMon+"T00:00:00"), endD=new Date(raceMon+"T00:00:00");
+  while(d<=endD){weeks.push(mondayOf(d.toISOString()));d.setDate(d.getDate()+7);}
+  const curSec=byWeek[nowMon]||(hist.length?hist[hist.length-1].sec:mara)||mara;
+  const nowIdx=weeks.indexOf(nowMon), raceIdx=weeks.length-1;
+  const actual=weeks.map(k=>byWeek[k]??null);
+  const ideal=weeks.map((k,i)=>{ if(i<Math.max(0,nowIdx))return null; const span=raceIdx-Math.max(0,nowIdx);
+    const f=span>0?(i-Math.max(0,nowIdx))/span:1; return Math.round(curSec+(GOAL.sec-curSec)*f); });
+  new Chart(document.getElementById("c_traj"),{type:"line",
+    data:{labels:weeks.map(wkLabel),datasets:[
+      {label:"Proyección",data:actual,borderColor:C.pred,backgroundColor:C.pred+"1f",tension:.3,pointRadius:3,borderWidth:2.5,fill:true,spanGaps:true},
+      {label:"Ideal",data:ideal,borderColor:C.goal,borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723",callbacks:{label:c=>c.dataset.label+": "+fmtTime(c.raw)}}},
+      scales:{x:{...axis({maxRotation:0,autoSkip:true,maxTicksLimit:9}),grid:{display:false}},
+        y:{...axis({callback:v=>fmtTime(v)}),reverse:true,
+          suggestedMin:GOAL.sec-200,suggestedMax:(hist.length?Math.max(...hist.map(h=>h.sec)):mara)+200}}}});
 
-  /* ---- weekly aggregates ---- */
-  const weeks={};
-  for(const a of acts){ if(!a.start) continue; const k=mondayOf(a.start);
-    const w=weeks[k]||(weeks[k]={run:0,bike:0,swim:0,other:0,runH:0,bikeH:0,swimH:0,otherH:0,vert:0,load:0});
-    const sp=sportOf(a.type), h=(a.duration_min||0)/60;
-    if(sp==="run") w.run+=a.distance_km||0; if(sp==="bike") w.bike+=a.distance_km||0; if(sp==="swim") w.swim+=a.distance_km||0;
+  /* weekly aggregates */
+  const wk={}; for(const a of acts){ if(!a.start)continue; const k=mondayOf(a.start);
+    const w=wk[k]||(wk[k]={run:0,bike:0,swim:0,runH:0,bikeH:0,swimH:0,otherH:0,vert:0,load:0});
+    const sp=sportOf(a.type),h=(a.duration_min||0)/60;
+    if(sp==="run")w.run+=a.distance_km||0; if(sp==="bike")w.bike+=a.distance_km||0; if(sp==="swim")w.swim+=a.distance_km||0;
     w[sp+"H"]+=h; w.vert+=a.elevation_gain_m||0; w.load+=a.training_load||0; }
-  const wk=Object.keys(weeks).sort().slice(-10);
-  const L=wk.map(weekLabel);
-  const ds=(get,color,label)=>({label,data:wk.map(k=>+get(weeks[k]).toFixed(1)),backgroundColor:color,borderRadius:6,borderSkipped:false});
+  const wks=Object.keys(wk).sort().slice(-10); const L=wks.map(wkLabel);
+  const col=(g)=>wks.map(k=>+g(wk[k]).toFixed(1));
+  const kmSeries=col(w=>w.run);
+  // ideal weekly km: gentle build from current toward a peak for sub-2:50 (~75 km)
+  const peak=75, curKm=kmSeries[kmSeries.length-1]||20;
+  const idealKm=L.map((_,i)=>+(curKm+(peak-curKm)*(i/(L.length-1||1))).toFixed(0));
 
-  document.getElementById("training").innerHTML=`
-    <div class="panel"><h3>Kilómetros de carrera por semana</h3><canvas id="c_runkm"></canvas></div>
-    <div class="panel"><h3>Volumen por deporte (km)</h3><canvas id="c_vol"></canvas></div>
-    <div class="panel"><h3>Horas por deporte</h3><canvas id="c_hrs"></canvas></div>
-    <div class="panel"><h3>Desnivel acumulado (m)</h3><canvas id="c_vert"></canvas></div>
-    <div class="panel"><h3>HR vs ritmo (carreras)</h3><canvas id="c_hrpace"></canvas></div>
-    <div class="panel"><h3>Carga de entrenamiento semanal</h3><canvas id="c_load"></canvas></div>`;
-  barChart(document.getElementById("c_runkm"),L,[ds(w=>w.run,C.run,"km")],false);
-  barChart(document.getElementById("c_vol"),L,[ds(w=>w.run,C.run,"Carrera"),ds(w=>w.bike,C.bike,"Bici"),ds(w=>w.swim,C.swim,"Nado")],true);
-  barChart(document.getElementById("c_hrs"),L,[ds(w=>w.runH,C.run,"Carrera"),ds(w=>w.bikeH,C.bike,"Bici"),ds(w=>w.swimH,C.swim,"Nado"),ds(w=>w.otherH,C.other,"Otro")],true);
-  barChart(document.getElementById("c_vert"),L,[ds(w=>w.vert,C.other,"m")],false);
-  barChart(document.getElementById("c_load"),L,[ds(w=>w.load,C.ready,"carga")],false);
+  document.getElementById("train1").innerHTML=`
+    <div class="card"><h3>Km de carrera / semana</h3><div class="legend"><span><i style="background:var(--run)"></i>Real</span><span><i class="dash" style="border-top-color:var(--goal)"></i>Objetivo build</span></div><div class="chartbox sm"><canvas id="c_runkm"></canvas></div></div>
+    <div class="card"><h3>Volumen por deporte (km)</h3><div class="chartbox sm"><canvas id="c_vol"></canvas></div></div>
+    <div class="card"><h3>Horas por deporte</h3><div class="chartbox sm"><canvas id="c_hrs"></canvas></div></div>`;
+  document.getElementById("train2").innerHTML=`
+    <div class="card"><h3>Desnivel acumulado (m)</h3><div class="chartbox xs"><canvas id="c_vert"></canvas></div></div>
+    <div class="card"><h3>Carga de entrenamiento</h3><div class="chartbox xs"><canvas id="c_load"></canvas></div></div>
+    <div class="card"><h3>HR vs ritmo (carreras)</h3><div class="chartbox xs"><canvas id="c_hrpace"></canvas></div></div>`;
 
-  // HR vs pace scatter (running)
+  new Chart(document.getElementById("c_runkm"),{type:"bar",
+    data:{labels:L,datasets:[dset("Real",kmSeries,C.run),
+      {type:"line",label:"Objetivo",data:idealKm,borderColor:C.goal,borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723"}},
+      scales:{x:{...axis(),grid:{display:false}},y:{...axis(),beginAtZero:true}}}});
+  barChart(document.getElementById("c_vol"),L,[dset("Carrera",col(w=>w.run),C.run),dset("Bici",col(w=>w.bike),C.bike),dset("Nado",col(w=>w.swim),C.swim)],true);
+  barChart(document.getElementById("c_hrs"),L,[dset("Carrera",col(w=>w.runH),C.run),dset("Bici",col(w=>w.bikeH),C.bike),dset("Otro",col(w=>w.otherH),C.other),dset("Nado",col(w=>w.swimH),C.swim)],true);
+  barChart(document.getElementById("c_vert"),L,[dset("m",col(w=>w.vert),C.other)],false);
+  barChart(document.getElementById("c_load"),L,[dset("carga",col(w=>w.load),C.ready)],false);
+
   const pts=acts.filter(a=>sportOf(a.type)==="run"&&a.avg_hr&&a.avg_speed_kmh)
-    .map(a=>({x:+(3600/a.avg_speed_kmh/60).toFixed(2), y:a.avg_hr, name:(a.name||"Carrera")+" "+String(a.start).slice(0,10)}));
-  new Chart(document.getElementById("c_hrpace"),{ type:"scatter",
-    data:{ datasets:[{ data:pts, backgroundColor:C.coral, pointRadius:5 }]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:"#4a4440",
-        callbacks:{ label:c=>`${c.raw.name}: ${Math.floor(c.raw.x)}:${String(Math.round((c.raw.x%1)*60)).padStart(2,"0")}/km · ${c.raw.y} bpm` } } },
-      scales:{ x:{ title:{display:true,text:"Ritmo (min/km)",color:"#a7a29c"}, grid:{color:"#f0ece7"}, ticks:{color:"#a7a29c"} },
-               y:{ title:{display:true,text:"HR media (bpm)",color:"#a7a29c"}, grid:{color:"#f0ece7"}, ticks:{color:"#a7a29c"} } } } });
+    .map(a=>({x:+(3600/a.avg_speed_kmh/60).toFixed(2),y:a.avg_hr,n:(a.name||"Carrera")+" "+String(a.start).slice(0,10)}));
+  new Chart(document.getElementById("c_hrpace"),{type:"scatter",data:{datasets:[{data:pts,backgroundColor:C.rhr,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723",
+      callbacks:{label:c=>`${c.raw.n}: ${Math.floor(c.raw.x)}:${String(Math.round(c.raw.x%1*60)).padStart(2,"0")}/km · ${c.raw.y} bpm`}}},
+      scales:{x:{title:{display:true,text:"min/km",color:MUTED,font:{size:10}},...axis()},y:{title:{display:true,text:"bpm",color:MUTED,font:{size:10}},...axis()}}}});
 
-  /* ---- coaching frameworks ---- */
-  const dayLoad={}; for(const a of acts){ if(a.start&&a.training_load) dayLoad[a.start.slice(0,10)]=(dayLoad[a.start.slice(0,10)]||0)+a.training_load; }
-  const today=new Date(); const dstr=d=>d.toISOString().slice(0,10);
-  let acute=0,chronic=0; for(let i=0;i<28;i++){ const d=new Date(today); d.setDate(d.getDate()-i); const v=dayLoad[dstr(d)]||0; chronic+=v; if(i<7) acute+=v; }
-  const acwr = chronic>0 ? acute/(chronic/4) : null;
-  const acwrZone = acwr==null?["—","var(--muted)","Sin datos de carga suficientes."]
-    : acwr<0.8?["Bajo","#8fb8e6","Estás por debajo de tu carga habitual: margen para subir gradualmente."]
-    : acwr<=1.3?["Óptimo","#7fc490","Zona ideal (0.8–1.3): progresión sostenible y bajo riesgo."]
-    : acwr<=1.5?["Elevado","#f0b98a","Subiendo rápido: cuida el descanso esta semana."]
-    : ["Riesgo","#ef9e9e","Salto de carga alto (>1.5): mayor riesgo de lesión, considera bajar."];
-
-  // Polarized 80/20 (approx by avg HR vs observed max)
-  const maxHR=Math.max(80,...acts.map(a=>a.max_hr||0));
-  let easyH=0,hardH=0;
-  for(const a of acts){ if(!a.avg_hr||!a.duration_min) continue; const h=a.duration_min/60;
-    if(a.avg_hr < 0.81*maxHR) easyH+=h; else hardH+=h; }
-  const totH=easyH+hardH, easyPct=totH?Math.round(easyH/totH*100):null;
-
-  // weekly ramp (km)
-  const kmSeries=wk.map(k=>weeks[k].run); const ramp = kmSeries.length>=2 && kmSeries[kmSeries.length-2]>0
-    ? Math.round((kmSeries[kmSeries.length-1]/kmSeries[kmSeries.length-2]-1)*100) : null;
-
+  /* coaching */
+  const dayLoad={}; for(const a of acts) if(a.start&&a.training_load) dayLoad[a.start.slice(0,10)]=(dayLoad[a.start.slice(0,10)]||0)+a.training_load;
+  const dstr=x=>x.toISOString().slice(0,10); let acute=0,chronic=0;
+  for(let i=0;i<28;i++){const dd=new Date(today);dd.setDate(dd.getDate()-i);const v=dayLoad[dstr(dd)]||0;chronic+=v;if(i<7)acute+=v;}
+  const acwr=chronic>0?acute/(chronic/4):null;
+  const az=acwr==null?["—","var(--muted)","Sin datos de carga."]:acwr<0.8?["Bajo",C.bike,"Margen para subir carga gradualmente."]
+    :acwr<=1.3?["Óptimo",C.good,"Zona ideal (0.8–1.3): progresión sostenible."]:acwr<=1.5?["Elevado",C.warn,"Cuida el descanso esta semana."]
+    :["Riesgo",C.bad,"Salto alto (>1.5): mayor riesgo de lesión."];
+  const maxHR=Math.max(120,...acts.map(a=>a.max_hr||0)); let eH=0,hH=0;
+  for(const a of acts){if(!a.avg_hr||!a.duration_min)continue;const h=a.duration_min/60;if(a.avg_hr<0.81*maxHR)eH+=h;else hH+=h;}
+  const easyPct=(eH+hH)?Math.round(eH/(eH+hH)*100):null;
+  const ramp=kmSeries.length>=2&&kmSeries[kmSeries.length-2]>0?Math.round((kmSeries[kmSeries.length-1]/kmSeries[kmSeries.length-2]-1)*100):null;
   document.getElementById("coach").innerHTML=`
-    <div class="panel"><h3>Ratio carga aguda:crónica</h3>
-      <div class="big" style="color:${acwrZone[1]}">${acwr?acwr.toFixed(2):"—"}</div>
-      <div class="desc"><b>${acwrZone[0]}.</b> ${acwrZone[2]}</div></div>
-    <div class="panel"><h3>Polarización (80/20)</h3>
-      <div class="big">${easyPct!=null?easyPct+"%":"—"}<small class="muted" style="font-size:14px"> fácil</small></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${easyPct||0}%;background:${C.run}"></div></div>
-      <div class="desc">Objetivo ~80% fácil / 20% fuerte. ${easyPct!=null?(easyPct>=75?"Buen equilibrio polarizado.":"Estás haciendo demasiada intensidad; suma más rodajes fáciles."):"Aprox. por HR media."}</div></div>
-    <div class="panel"><h3>Rampa semanal (km carrera)</h3>
-      <div class="big">${ramp!=null?(ramp>0?"+":"")+ramp+"%":"—"}</div>
-      <div class="desc">Cambio vs semana previa. La regla clásica sugiere no subir más de ~10% por semana.</div></div>`;
+    <div class="card"><h3>Carga aguda:crónica (ACWR)</h3><div class="big num" style="color:${az[1]}">${acwr?acwr.toFixed(2):"—"}</div><div class="desc"><b>${az[0]}.</b> ${az[2]}</div></div>
+    <div class="card"><h3>Polarización 80/20</h3><div class="big num">${easyPct!=null?easyPct+"%":"—"}<small class="muted" style="font-size:13px"> fácil</small></div><div class="track"><div class="fill" style="width:${easyPct||0}%;background:${C.run}"></div></div><div class="desc">Objetivo ~80% fácil. ${easyPct!=null?(easyPct>=75?"Buen equilibrio.":"Demasiada intensidad; suma rodajes suaves."):""}</div></div>
+    <div class="card"><h3>Rampa semanal (km)</h3><div class="big num">${ramp!=null?(ramp>0?"+":"")+ramp+"%":"—"}</div><div class="desc">Regla clásica: no subir más de ~10%/sem.</div></div>`;
 
-  /* ---- insights text ---- */
-  const ins=[];
-  const rc = kmSeries.length>=2 ? kmSeries[kmSeries.length-1] : (kmSeries[0]||0);
-  const rprev = kmSeries.length>=2 ? kmSeries[kmSeries.length-2] : null;
-  if(rc!=null){ ins.push([C.run, `Corriste <b>${fmt(rc,1)} km</b> esta semana${rprev!=null?` (${ramp>0?"+":""}${ramp}% vs la anterior)`:""}.`]); }
-  const rec=n=>wellness.slice(-n);
-  const avg=(arr,k)=>{ const v=arr.map(x=>x[k]).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
-  const sl=avg(rec(7),"sleep_hours"); if(sl) ins.push([C.sleep, `Dormiste en promedio <b>${fmt(sl,1)} h</b> los últimos 7 días.`]);
-  const h7=avg(rec(7),"hrv_overnight"), h14=avg(rec(14).slice(0,7),"hrv_overnight");
-  if(h7&&h14){ const diff=h7-h14, word=diff>=0.5?"al alza":diff<=-0.5?"en descenso":"estable";
-    ins.push([C.hrv, `Tu HRV va <b>${word}</b> (${fmt(h7,0)} ms vs ${fmt(h14,0)} ms la semana previa).`]); }
-  if(last.training_readiness) ins.push([C.ready, `Tu readiness más reciente es <b>${fmt(last.training_readiness)}</b>/100.`]);
-  if(acwr) ins.push([acwrZone[1], `Tu carga aguda:crónica está en <b>${acwr.toFixed(2)}</b> — ${acwrZone[0].toLowerCase()}.`]);
-  if(marathon) ins.push([C.rose, `Tu ritmo de maratón proyectado es <b>${fmtPace(marathon/42.195)}</b>.`]);
-  document.getElementById("insights").innerHTML = ins.length
-    ? ins.map(([c,t])=>`<p><span class="tag" style="background:${c}"></span>${t}</p>`).join("")
-    : `<p class="muted">Aún no hay suficientes datos. Deja que se acumulen unos días.</p>`;
+  /* analysis */
+  const A=[]; const rc=kmSeries[kmSeries.length-1]||0, rprev=kmSeries.length>=2?kmSeries[kmSeries.length-2]:null;
+  const paceCur=mara?mara/42.195:null;
+  A.push([C.pred,`Tu maratón proyectado es <b>${fmtTime(mara)}</b> (${fmtPace(paceCur)}). La meta de Berlín es <b>2:50</b> (4:01/km): te faltan <b>${gap>0?fmtTime(gap):"0"}</b> y quedan <b>${days} días</b>.`]);
+  if(trend!=null) A.push([trend>0?C.good:C.warn, trend>0?`Vas <b>mejorando</b>: recortaste ${fmtTime(trend)} a tu proyección desde que hay registro. Mantén la consistencia.`:`Tu proyección está <b>estancada o subiendo</b>. Para acercarte a 2:50 necesitas más estímulo de calidad y volumen.`]);
+  A.push([C.run, rc<45?`Corriste <b>${fmt(rc,0)} km</b> esta semana${rprev!=null?` (${ramp>0?"+":""}${ramp}%)`:""}. Para un 2:50 lo habitual es sostener <b>60–85 km/sem</b> con un fondo largo — <b>deberías subir volumen</b> de forma gradual.`:`Corriste <b>${fmt(rc,0)} km</b> esta semana, buen volumen para tu objetivo. Mantén el fondo largo semanal.`]);
+  const sl=avg(wellness.slice(-7),"sleep_hours");
+  if(sl!=null) A.push([C.sleep, sl<7?`Duermes <b>${fmt(sl,1)} h</b> en promedio — <b>deberías dormir más</b> (apunta a 7.5–8 h) para asimilar la carga y bajar el riesgo de lesión.`:`Duermes <b>${fmt(sl,1)} h</b> en promedio, suficiente para recuperar bien.`]);
+  const h7=avg(wellness.slice(-7),"hrv_overnight"),h14=avg(wellness.slice(-14,-7),"hrv_overnight");
+  if(h7&&h14){const df=Math.round(h7)-Math.round(h14);A.push([C.hrv,`Tu HRV va ${df>0?"<b>al alza</b> — buena adaptación":df<0?"<b>a la baja</b> — vigila fatiga y sueño":"<b>estable</b>"} (${fmt(h7,0)} vs ${fmt(h14,0)} ms la semana previa).`]);}
+  if(acwr) A.push([az[1],`Tu carga aguda:crónica es <b>${acwr.toFixed(2)}</b> (${az[0].toLowerCase()}). ${acwr<0.8?"Tienes margen para entrenar más esta semana.":acwr>1.5?"Baja un poco para no arriesgar lesión.":"Sigue así."}`]);
+  A.push([C.ready,`<b>Esta semana:</b> ${rc<45?"sube el fondo largo 2–3 km, ":""}añade 1 sesión a ritmo objetivo (${fmtPace(GOAL.paceKm)}) y mantén el resto en fácil.`]);
+  document.getElementById("analysis").innerHTML=A.map(([c,t])=>`<p><span class="d" style="background:${c}"></span>${t}</p>`).join("");
 
-  /* ---- today cards ---- */
+  /* today */
   document.getElementById("today").innerHTML=[
-    ["HR en reposo",fmt(last.resting_hr),"bpm"],["HRV nocturna",fmt(last.hrv_overnight),"ms"],
-    ["Sueño",fmt(last.sleep_hours,1),"h"],["Readiness",fmt(last.training_readiness),"/100"],
-    ["Estrés prom",fmt(last.stress_avg),""],["Pasos",fmt(last.steps),""],
-  ].map(([l,v,u])=>`<div class="metric"><div class="lbl">${l}</div><div class="val">${v} <small>${u}</small></div></div>`).join("");
+    ["HR reposo",fmt(last.resting_hr),"bpm"],["HRV",fmt(last.hrv_overnight),"ms"],["Sueño",fmt(last.sleep_hours,1),"h"],
+    ["Readiness",fmt(last.training_readiness),"/100"],["Estrés",fmt(last.stress_avg),""],["Pasos",fmt(last.steps),""]
+  ].map(([l,v,u])=>`<div class="stat"><div class="l">${l}</div><div class="v num">${v} <small>${u}</small></div></div>`).join("");
 
-  /* ---- wellness trends ---- */
-  const wl=wellness.map(w=>w.date.slice(5));
+  /* wellness */
+  const wl=wellness.map(w=>w.date.slice(5)), pick=k=>wellness.map(w=>w[k]??null);
   document.getElementById("wellness").innerHTML=`
-    <div class="panel"><h3>Sueño (h)</h3><canvas id="w_sleep"></canvas></div>
-    <div class="panel"><h3>HRV nocturna (ms)</h3><canvas id="w_hrv"></canvas></div>
-    <div class="panel"><h3>HR en reposo (bpm)</h3><canvas id="w_rhr"></canvas></div>
-    <div class="panel"><h3>Training readiness</h3><canvas id="w_ready"></canvas></div>`;
-  const pick=k=>wellness.map(w=>w[k]??null);
-  lineChart(document.getElementById("w_sleep"),wl,pick("sleep_hours"),C.sleep);
-  lineChart(document.getElementById("w_hrv"),wl,pick("hrv_overnight"),C.hrv);
-  lineChart(document.getElementById("w_rhr"),wl,pick("resting_hr"),C.coral);
-  lineChart(document.getElementById("w_ready"),wl,pick("training_readiness"),C.ready);
+    <div class="card"><h3>Sueño (h)</h3><div class="chartbox xs"><canvas id="w1"></canvas></div></div>
+    <div class="card"><h3>HRV (ms)</h3><div class="chartbox xs"><canvas id="w2"></canvas></div></div>
+    <div class="card"><h3>HR reposo (bpm)</h3><div class="chartbox xs"><canvas id="w3"></canvas></div></div>
+    <div class="card"><h3>Readiness</h3><div class="chartbox xs"><canvas id="w4"></canvas></div></div>`;
+  lineChart(document.getElementById("w1"),wl,pick("sleep_hours"),C.sleep);
+  lineChart(document.getElementById("w2"),wl,pick("hrv_overnight"),C.hrv);
+  lineChart(document.getElementById("w3"),wl,pick("resting_hr"),C.rhr);
+  lineChart(document.getElementById("w4"),wl,pick("training_readiness"),C.ready);
 
-  /* ---- activities table ---- */
-  const tb=document.querySelector("#acts tbody");
-  tb.innerHTML=acts.slice(0,25).map(a=>{ const sp=sportOf(a.type);
-    const paceOrVel = sp==="run"&&a.avg_speed_kmh ? fmtPace(3600/a.avg_speed_kmh)
-      : a.avg_speed_kmh ? fmt(a.avg_speed_kmh,1)+" km/h" : "—";
-    return `<tr>
-      <td>${(a.start||"").slice(0,10)}</td>
-      <td><span class="sportdot" style="background:${C[sp]}"></span>${a.name||a.type||"—"}</td>
-      <td>${fmt(a.duration_min)} min</td>
-      <td>${a.distance_km?fmt(a.distance_km,1)+" km":"—"}</td>
-      <td>${paceOrVel}</td>
-      <td>${a.avg_hr?fmt(a.avg_hr)+" bpm":"—"}</td>
-      <td>${a.elevation_gain_m?fmt(a.elevation_gain_m)+" m":"—"}</td></tr>`;
-  }).join("") || `<tr><td colspan="7" class="muted">Sin entrenamientos aún.</td></tr>`;
+  /* activities */
+  document.querySelector("#acts tbody").innerHTML=acts.slice(0,20).map(a=>{const sp=sportOf(a.type);
+    const pv=sp==="run"&&a.avg_speed_kmh?fmtPace(3600/a.avg_speed_kmh):a.avg_speed_kmh?fmt(a.avg_speed_kmh,1)+" km/h":"—";
+    return `<tr><td class="num">${(a.start||"").slice(0,10)}</td><td><span class="dot" style="background:${C[sp]}"></span>${a.name||a.type||"—"}</td>
+      <td class="num">${fmt(a.duration_min)}m</td><td class="num">${a.distance_km?fmt(a.distance_km,1)+" km":"—"}</td>
+      <td class="num">${pv}</td><td class="num">${a.avg_hr?fmt(a.avg_hr):"—"}</td><td class="num">${a.elevation_gain_m?fmt(a.elevation_gain_m)+"m":"—"}</td></tr>`;
+  }).join("")||`<tr><td colspan="7" class="muted">Sin entrenamientos.</td></tr>`;
 }
 load();
 </script>
