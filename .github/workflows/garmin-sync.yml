@@ -1,0 +1,50 @@
+name: garmin-sync
+
+# Runs the Garmin pull every morning in the cloud (Path A).
+# Copy this file into .github/workflows/ in your own repo.
+
+on:
+  schedule:
+    # 06:00 UTC daily. Adjust to your timezone if you like.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}  # lets you click "Run workflow" manually
+
+permissions:
+  contents: write  # needed if you commit the garmin/ folder back (files sink)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r files/requirements.txt
+
+      - name: Pull Garmin data
+        env:
+          # Base64 token bundle printed by `python sync_garmin.py --login`.
+          GARMIN_TOKEN_B64: ${{ secrets.GARMIN_TOKEN_B64 }}
+          # Only needed for --sink supabase:
+          GARMIN_INGEST_URL: ${{ secrets.GARMIN_INGEST_URL }}
+          GARMIN_INGEST_SECRET: ${{ secrets.SESSION_LOG_SECRET }}
+        run: |
+          # For the database path, swap the next line for:
+          #   python files/sync_garmin.py --days 3 --sink supabase
+          python files/sync_garmin.py --days 3 --sink files --out ./garmin
+
+      - name: Commit updated data (files sink only)
+        run: |
+          if [ -d garmin ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -f garmin
+            git diff --staged --quiet || git commit -m "Garmin sync $(date -u +%Y-%m-%d)"
+            git push
+          fi
