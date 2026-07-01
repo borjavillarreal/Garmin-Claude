@@ -1,0 +1,11 @@
+# Miguel Hidalgo Other
+- Type: other
+- Start: 2026-06-16 05:43:08
+- Duration: 10.9 min
+- Distance: 0.2 km
+- Avg pace/speed: 1.0 km/h
+- Avg HR: 91.0 bpm
+- Max HR: 124.0 bpm
+- Elevation gain: 0.0 m
+- Calories: 56.0
+- Training load: 2.8220367431640625

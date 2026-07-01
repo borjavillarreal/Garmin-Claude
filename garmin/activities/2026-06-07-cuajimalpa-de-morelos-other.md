@@ -1,0 +1,11 @@
+# Cuajimalpa de Morelos Other
+- Type: other
+- Start: 2026-06-07 20:43:22
+- Duration: 46.0 min
+- Distance: 0.9 km
+- Avg pace/speed: 1.2 km/h
+- Avg HR: 82.0 bpm
+- Max HR: 175.0 bpm
+- Elevation gain: 26.0 m
+- Calories: 168.0
+- Training load: 11.762069702148438

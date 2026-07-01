@@ -1,0 +1,11 @@
+# Mineral del Chico Hiking
+- Type: hiking
+- Start: 2026-06-13 07:57:04
+- Duration: 214.0 min
+- Distance: 4.7 km
+- Avg pace/speed: 1.3 km/h
+- Avg HR: 73.0 bpm
+- Max HR: 120.0 bpm
+- Elevation gain: 123.0 m
+- Calories: 534.0
+- Training load: 3.6834869384765625

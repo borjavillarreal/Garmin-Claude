@@ -1,0 +1,11 @@
+# Houston Running
+- Type: running
+- Start: 2026-06-19 09:06:06
+- Duration: 22.6 min
+- Distance: 5.1 km
+- Avg pace/speed: 13.6 km/h
+- Avg HR: 151.0 bpm
+- Max HR: 182.0 bpm
+- Elevation gain: 14.0 m
+- Calories: 339.0
+- Training load: 110.87007141113281

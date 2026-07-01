@@ -1,0 +1,11 @@
+# Naucalpan de Juárez - Endurance 75
+- Type: running
+- Start: 2026-06-28 10:48:20
+- Duration: 98.0 min
+- Distance: 16.9 km
+- Avg pace/speed: 10.3 km/h
+- Avg HR: 135.0 bpm
+- Max HR: 154.0 bpm
+- Elevation gain: 188.0 m
+- Calories: 1236.0
+- Training load: 100.68016052246094

@@ -1,0 +1,11 @@
+# Houston - [BH EM Spec] 3k's
+- Type: running
+- Start: 2026-06-21 12:00:14
+- Duration: 34.0 min
+- Distance: 7.4 km
+- Avg pace/speed: 13.0 km/h
+- Avg HR: 154.0 bpm
+- Max HR: 184.0 bpm
+- Elevation gain: 31.0 m
+- Calories: 534.0
+- Training load: 145.6300811767578

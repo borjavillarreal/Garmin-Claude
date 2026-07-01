@@ -1,0 +1,11 @@
+# Miguel Hidalgo - Hill Repeats - 30s - 2x
+- Type: running
+- Start: 2026-06-12 06:35:25
+- Duration: 57.2 min
+- Distance: 9.7 km
+- Avg pace/speed: 10.2 km/h
+- Avg HR: 134.0 bpm
+- Max HR: 178.0 bpm
+- Elevation gain: 146.0 m
+- Calories: 731.0
+- Training load: 122.93257141113281

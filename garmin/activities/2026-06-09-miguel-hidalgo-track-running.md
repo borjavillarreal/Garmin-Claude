@@ -1,0 +1,11 @@
+# Miguel Hidalgo Track Running
+- Type: track_running
+- Start: 2026-06-09 05:57:18
+- Duration: 56.9 min
+- Distance: 10.0 km
+- Avg pace/speed: 10.5 km/h
+- Avg HR: 149.0 bpm
+- Max HR: 186.0 bpm
+- Elevation gain: 0.0 m
+- Calories: 764.0
+- Training load: 210.1851806640625

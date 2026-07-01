@@ -1,0 +1,11 @@
+# Zwift - Mahatma
+- Type: virtual_ride
+- Start: 2026-06-06 13:04:47
+- Duration: 60.2 min
+- Distance: 30.1 km
+- Avg pace/speed: 30.0 km/h
+- Avg HR: 127.0 bpm
+- Max HR: 146.0 bpm
+- Elevation gain: 178.0 m
+- Calories: 510.0
+- Training load: 40.000030517578125
