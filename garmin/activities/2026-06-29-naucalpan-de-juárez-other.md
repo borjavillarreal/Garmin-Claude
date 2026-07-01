@@ -1,0 +1,11 @@
+# Naucalpan de Juárez Other
+- Type: other
+- Start: 2026-06-29 07:14:38
+- Duration: 7.2 min
+- Distance: 0.1 km
+- Avg pace/speed: 0.6 km/h
+- Avg HR: 81.0 bpm
+- Max HR: 119.0 bpm
+- Elevation gain: 0.0 m
+- Calories: 29.0
+- Training load: 1.0530242919921875

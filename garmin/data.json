@@ -1,0 +1,102 @@
+{
+  "activities": {
+    "23417968401": {
+      "avg_hr": 81.0,
+      "avg_speed_kmh": 0.6,
+      "calories": 29.0,
+      "distance_km": 0.1,
+      "duration_min": 7.2,
+      "elevation_gain_m": 0.0,
+      "id": 23417968401,
+      "max_hr": 119.0,
+      "name": "Naucalpan de Ju\u00e1rez Other",
+      "start": "2026-06-29 07:14:38",
+      "training_load": 1.0530242919921875,
+      "type": "other"
+    },
+    "23429342041": {
+      "avg_hr": 122.0,
+      "avg_speed_kmh": 8.7,
+      "calories": 238.0,
+      "distance_km": 3.5,
+      "duration_min": 24.1,
+      "elevation_gain_m": 3.0,
+      "id": 23429342041,
+      "max_hr": 159.0,
+      "name": "Miguel Hidalgo Other",
+      "start": "2026-06-30 06:03:13",
+      "training_load": 20.754165649414062,
+      "type": "other"
+    },
+    "23429961829": {
+      "avg_hr": 155.0,
+      "avg_speed_kmh": 10.8,
+      "calories": 685.0,
+      "distance_km": 8.7,
+      "duration_min": 48.4,
+      "elevation_gain_m": 0.0,
+      "id": 23429961829,
+      "max_hr": 185.0,
+      "name": "Miguel Hidalgo Track Running",
+      "start": "2026-06-30 06:36:55",
+      "training_load": 203.9285888671875,
+      "type": "track_running"
+    },
+    "23442849643": {
+      "avg_hr": 76.0,
+      "avg_speed_kmh": null,
+      "calories": 266.0,
+      "distance_km": null,
+      "duration_min": 83.7,
+      "elevation_gain_m": null,
+      "id": 23442849643,
+      "max_hr": 126.0,
+      "name": "Strength",
+      "start": "2026-07-01 07:22:45",
+      "training_load": 2.5405426025390625,
+      "type": "strength_training"
+    }
+  },
+  "updated_at": "2026-07-01T16:38:57.519783+00:00",
+  "wellness": {
+    "2026-06-29": {
+      "body_battery_high": null,
+      "body_battery_low": null,
+      "date": "2026-06-29",
+      "hrv_overnight": 38,
+      "hrv_status": "BALANCED",
+      "resting_hr": null,
+      "sleep_hours": 7.2,
+      "sleep_score": 71,
+      "steps": null,
+      "stress_avg": null,
+      "training_readiness": 71
+    },
+    "2026-06-30": {
+      "body_battery_high": null,
+      "body_battery_low": null,
+      "date": "2026-06-30",
+      "hrv_overnight": 45,
+      "hrv_status": "BALANCED",
+      "resting_hr": null,
+      "sleep_hours": 7.2,
+      "sleep_score": 77,
+      "steps": null,
+      "stress_avg": null,
+      "training_readiness": 50
+    },
+    "2026-07-01": {
+      "body_battery_high": null,
+      "body_battery_low": null,
+      "date": "2026-07-01",
+      "hrv_overnight": 34,
+      "hrv_status": "BALANCED",
+      "resting_hr": null,
+      "sleep_hours": 4.3,
+      "sleep_score": 38,
+      "steps": null,
+      "stress_avg": null,
+      "training_readiness": 22
+    }
+  }
+}
