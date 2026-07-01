@@ -45,6 +45,17 @@ jobs:
           # For the database path, swap files for supabase below.
           python files/sync_garmin.py --days "${{ github.event.inputs.days || '3' }}" --sink files --out ./garmin
 
+      - name: AI coach note (optional)
+        continue-on-error: true
+        env:
+          # Add an ANTHROPIC_API_KEY repo secret to enable the AI coach note.
+          # No key -> this step no-ops and the sync still commits normally.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COACH_MODEL: claude-opus-4-8
+        run: |
+          pip install anthropic
+          python files/coach_ai.py --out ./garmin
+
       - name: Commit updated data (files sink only)
         run: |
           if [ -d garmin ]; then
