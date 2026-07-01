@@ -421,7 +421,29 @@
       "type": "strength_training"
     }
   },
-  "updated_at": "2026-07-01T19:23:16.488498+00:00",
+  "fitness": {
+    "date": "2026-07-01",
+    "max_metrics_raw": [],
+    "race_pred": {
+      "sec_10k": 2386,
+      "sec_5k": 1114,
+      "sec_half": 5371,
+      "sec_marathon": 11877
+    },
+    "race_pred_raw": {
+      "calendarDate": "2026-07-01",
+      "fromCalendarDate": null,
+      "time10K": 2386,
+      "time5K": 1114,
+      "timeHalfMarathon": 5371,
+      "timeMarathon": 11877,
+      "toCalendarDate": null,
+      "userId": 120410381
+    },
+    "vo2max_bike": null,
+    "vo2max_run": null
+  },
+  "updated_at": "2026-07-01T20:19:00.633457+00:00",
   "wellness": {
     "2026-06-02": {
       "body_battery_high": 88,
@@ -809,9 +831,9 @@
       "resting_hr": 51,
       "sleep_hours": 4.3,
       "sleep_score": 38,
-      "steps": 2240,
-      "stress_avg": 23,
-      "training_readiness": 22
+      "steps": 3069,
+      "stress_avg": 21,
+      "training_readiness": 25
     }
   }
 }
