@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Mi tablero Garmin</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1216; --card: #191d24; --line: #262c36;
+    --text: #e7ecf3; --muted: #9aa5b4; --accent: #4f9cf9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.4;
+  }
+  header {
+    padding: 24px 20px 8px; max-width: 1100px; margin: 0 auto;
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 12px 20px 60px; }
+  .cards {
+    display: grid; gap: 12px; margin: 16px 0 28px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .card .value { font-size: 26px; font-weight: 600; margin-top: 4px; }
+  .card .unit { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .grid {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+  .panel {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+  canvas { max-height: 240px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  .section-title { margin: 34px 0 6px; font-size: 17px; }
+  #error { display: none; background: #3a1d1d; border: 1px solid #6b2b2b; color: #ffd7d7;
+           padding: 16px; border-radius: 12px; margin-top: 20px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏃 Mi tablero Garmin</h1>
+  <div class="sub" id="updated">Cargando…</div>
+</header>
+<main>
+  <div id="error"></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="grid" id="charts"></div>
+
+  <h2 class="section-title">Entrenamientos recientes</h2>
+  <div class="panel">
+    <table id="activities">
+      <thead><tr>
+        <th>Fecha</th><th>Actividad</th><th>Duración</th>
+        <th>Distancia</th><th>HR prom</th><th>Calorías</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+const PALETTE = {
+  sleep: "#7c5cff", hrv: "#22c3a6", rhr: "#ff6b6b",
+  readiness: "#4f9cf9", steps: "#f7b955", stress: "#e879f9",
+};
+
+function fmt(n, digits = 0) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  return Number(n).toLocaleString("es-MX", { maximumFractionDigits: digits });
+}
+
+function card(label, value, unit = "") {
+  return `<div class="card"><div class="label">${label}</div>
+    <div class="value">${value}<span class="unit"> ${unit}</span></div></div>`;
+}
+
+function makeChart(title, labels, dataset) {
+  const wrap = document.createElement("div");
+  wrap.className = "panel";
+  wrap.innerHTML = `<h2>${title}</h2><canvas></canvas>`;
+  document.getElementById("charts").appendChild(wrap);
+  new Chart(wrap.querySelector("canvas"), {
+    type: "line",
+    data: { labels, datasets: [{
+      label: title, data: dataset.data, borderColor: dataset.color,
+      backgroundColor: dataset.color + "22", tension: 0.3, spanGaps: true,
+      pointRadius: 2, fill: true, borderWidth: 2,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: "#232a34" }, ticks: { color: "#9aa5b4", maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+        y: { grid: { color: "#232a34" }, ticks: { color: "#9aa5b4" }, beginAtZero: false },
+      },
+    },
+  });
+}
+
+function pick(arr, key) { return arr.map(w => (w[key] === undefined ? null : w[key])); }
+
+async function load() {
+  let store;
+  try {
+    const res = await fetch("garmin/data.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    store = await res.json();
+  } catch (e) {
+    const box = document.getElementById("error");
+    box.style.display = "block";
+    box.innerHTML = "No pude cargar <code>garmin/data.json</code> (" + e.message +
+      ").<br>Si abriste el archivo con doble clic, el navegador bloquea la carga. " +
+      "Ábrelo con un servidor local: en la carpeta corre <code>python3 -m http.server 8000</code> " +
+      "y entra a <a href='http://localhost:8000'>http://localhost:8000</a>.";
+    document.getElementById("updated").textContent = "";
+    return;
+  }
+
+  const wellness = Object.values(store.wellness || {}).sort((a, b) => a.date.localeCompare(b.date));
+  const activities = Object.values(store.activities || {})
+    .sort((a, b) => String(b.start).localeCompare(String(a.start)));
+
+  const updated = store.updated_at ? new Date(store.updated_at).toLocaleString("es-MX") : "—";
+  document.getElementById("updated").textContent =
+    `Última actualización: ${updated} · ${wellness.length} días · ${activities.length} entrenamientos`;
+
+  // Latest-day summary cards
+  const last = wellness[wellness.length - 1] || {};
+  document.getElementById("cards").innerHTML = [
+    card("HR en reposo", fmt(last.resting_hr), "bpm"),
+    card("HRV nocturna", fmt(last.hrv_overnight), "ms"),
+    card("Sueño", fmt(last.sleep_hours, 1), "h"),
+    card("Readiness", fmt(last.training_readiness), "/100"),
+    card("Estrés prom", fmt(last.stress_avg), ""),
+    card("Pasos", fmt(last.steps), ""),
+  ].join("");
+
+  const labels = wellness.map(w => w.date.slice(5)); // MM-DD
+  makeChart("Sueño (horas)", labels, { data: pick(wellness, "sleep_hours"), color: PALETTE.sleep });
+  makeChart("HRV nocturna (ms)", labels, { data: pick(wellness, "hrv_overnight"), color: PALETTE.hrv });
+  makeChart("HR en reposo (bpm)", labels, { data: pick(wellness, "resting_hr"), color: PALETTE.rhr });
+  makeChart("Training readiness", labels, { data: pick(wellness, "training_readiness"), color: PALETTE.readiness });
+  makeChart("Pasos", labels, { data: pick(wellness, "steps"), color: PALETTE.steps });
+  makeChart("Estrés promedio", labels, { data: pick(wellness, "stress_avg"), color: PALETTE.stress });
+
+  const tbody = document.querySelector("#activities tbody");
+  tbody.innerHTML = activities.slice(0, 30).map(a => `<tr>
+    <td>${(a.start || "").slice(0, 10)}</td>
+    <td>${a.name || a.type || "—"}</td>
+    <td>${fmt(a.duration_min, 0)} min</td>
+    <td>${a.distance_km ? fmt(a.distance_km, 1) + " km" : "—"}</td>
+    <td>${a.avg_hr ? fmt(a.avg_hr) + " bpm" : "—"}</td>
+    <td>${fmt(a.calories)}</td>
+  </tr>`).join("") || `<tr><td colspan="6">Sin entrenamientos aún.</td></tr>`;
+}
+
+load();
+</script>
+</body>
+</html>
