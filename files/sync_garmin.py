@@ -165,7 +165,11 @@ def _resume() -> "Garmin":
     token_b64 = os.environ.get(TOKEN_B64_ENV)
     if token_b64:
         raw = base64.b64decode(_pad_b64(token_b64)).decode("utf-8")
-        _auth_holder(garmin).loads(raw)
+        # login(token_string) loads the token AND fetches the profile, which
+        # sets display_name. get_user_summary (resting HR, steps, stress, body
+        # battery) needs it; a bare client.loads() skips that and those fields
+        # come back empty.
+        garmin.login(raw)
         return garmin
 
     if not Path(TOKENSTORE).expanduser().exists():
