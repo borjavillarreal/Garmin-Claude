@@ -5,8 +5,8 @@ name: garmin-sync
 
 on:
   schedule:
-    # 06:00 UTC daily. Adjust to your timezone if you like.
-    - cron: "0 6 * * *"
+    # 12:00 UTC = 06:00 in central Mexico (UTC-6, no DST). Cron is always UTC.
+    - cron: "0 12 * * *"
   workflow_dispatch: {}  # lets you click "Run workflow" manually
 
 permissions:
