@@ -150,6 +150,13 @@ def _token_string(garmin) -> str:
     return raw
 
 
+def _pad_b64(s: str) -> str:
+    """Strip whitespace and restore any '=' padding stripped in transit (e.g. by
+    a secrets store or a copy-paste) so base64 decoding does not fail."""
+    s = "".join(s.split())
+    return s + "=" * (-len(s) % 4)
+
+
 def _resume() -> "Garmin":
     """Log in using a saved token. Tries the base64 env var, then the token dir."""
     Garmin = _import_garmin()
@@ -157,7 +164,7 @@ def _resume() -> "Garmin":
 
     token_b64 = os.environ.get(TOKEN_B64_ENV)
     if token_b64:
-        raw = base64.b64decode(token_b64).decode("utf-8")
+        raw = base64.b64decode(_pad_b64(token_b64)).decode("utf-8")
         _auth_holder(garmin).loads(raw)
         return garmin
 
