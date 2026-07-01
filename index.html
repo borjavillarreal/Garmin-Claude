@@ -96,6 +96,17 @@
   td.num,th.num{font-variant-numeric:tabular-nums}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
 
+  .paces{width:100%;border-collapse:collapse}
+  .paces td{padding:6px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .paces .z{font-weight:600}
+  .paces .p{text-align:right;font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap}
+  .paces .why{color:var(--muted);font-size:11px}
+  .goalrow{background:linear-gradient(90deg,#eafaf0,transparent)}
+  .plan .phase{display:inline-block;background:#eef6ff;color:#2b5b8f;border-radius:999px;padding:2px 11px;font-size:11px;font-weight:650;margin-bottom:8px}
+  .plan ul{margin:6px 0 0;padding-left:16px}
+  .plan li{margin:5px 0;font-size:12.5px}
+  .plan b.tp{color:var(--pred);font-variant-numeric:tabular-nums}
+  .goalpace{color:var(--goal);font-weight:650}
   #err{display:none;background:#fff4f4;border:1px solid #f2d6d6;color:#a55;padding:14px;border-radius:12px}
 
   .backdrop{position:fixed;inset:0;background:rgba(30,25,15,.4);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
@@ -160,6 +171,10 @@
   <div class="section">Entrenamiento semanal</div>
   <div class="row g3" id="train1"></div>
   <div class="row g3" id="train2" style="margin-top:14px"></div>
+
+  <!-- PLANNING -->
+  <div class="section">Ritmos objetivo y plan hacia 2:50</div>
+  <div class="row g2" id="planning"></div>
 
   <!-- COACH -->
   <div class="section">Marcos de entrenamiento</div>
@@ -238,6 +253,26 @@ function ironman(acts,p){
     return {swim,bike,run,trans:c.t,total:swim+bike+run+c.t,a};};
   return {full:calc(3.8,180,42.195,{bf:.82,ref:42.195,refKm:42.195,pen:1.14,t:720}),
           half:calc(1.9,90,21.0975,{bf:.9,ref:21.0975,refKm:21.0975,pen:1.08,t:480})};
+}
+function trainingPaces(p){
+  const mp=p[42.195]?p[42.195]/42.195:null, hm=p[21.0975]?p[21.0975]/21.0975:null,
+        tk=p[10]?p[10]/10:null, fk=p[5]?p[5]/5:null;
+  if(!mp) return null;
+  const rng=([a,b])=>a==null?"—":(Math.abs(a-b)<1?fmtPace(a):`${fmtPace(a)}–${fmtPace(b)}`);
+  return [
+    {z:"Fácil / recuperación",p:rng([mp+70,mp+95]),why:"la mayoría de tus km, base aeróbica"},
+    {z:"Maratón (actual)",p:rng([mp,mp]),why:"tu ritmo sostenible de maratón hoy"},
+    {z:"Umbral / tempo",p:rng(hm?[hm-8,hm+4]:[mp-16,mp-8]),why:"20–40 min continuos o bloques largos"},
+    {z:"Intervalo (VO₂máx)",p:rng(fk?[fk-2,fk+4]:(tk?[tk-8,tk-2]:[null,null])),why:"repeticiones de 3–5 min"},
+    {z:"Repetición / velocidad",p:rng(fk?[fk-14,fk-6]:[null,null]),why:"tramos cortos y rápidos"},
+  ];
+}
+function planPhase(days){
+  if(days>70) return {name:"Base",focus:"Construir volumen y resistencia aeróbica",km:"sube gradual hacia 60–70 km/sem"};
+  if(days>35) return {name:"Específico",focus:"Trabajo a ritmo meta y umbral",km:"pico 70–85 km/sem"};
+  if(days>18) return {name:"Pico",focus:"Máxima carga específica, fondos con ritmo meta",km:"85 km y empezar a bajar"};
+  if(days>4)  return {name:"Taper",focus:"Baja volumen 40–60%, mantén algo de ritmo meta",km:"prioriza frescura"};
+  return {name:"Semana de carrera",focus:"Afinar, descansar y confiar",km:"descanso"};
 }
 function marathonHistory(store){
   const fh=store.fitness_history||{};
@@ -389,10 +424,14 @@ async function load(){
 
   const pts=acts.filter(a=>sportOf(a.type)==="run"&&a.avg_hr&&a.avg_speed_kmh)
     .map(a=>({x:+(3600/a.avg_speed_kmh/60).toFixed(2),y:a.avg_hr,n:(a.name||"Carrera")+" "+String(a.start).slice(0,10)}));
-  new Chart(document.getElementById("c_hrpace"),{type:"scatter",data:{datasets:[{data:pts,backgroundColor:C.rhr,pointRadius:4}]},
+  const gpMin=GOAL.paceKm/60; const hrsY=pts.map(p=>p.y);
+  const yLo=pts.length?Math.min(...hrsY)-5:120, yHi=pts.length?Math.max(...hrsY)+5:170;
+  new Chart(document.getElementById("c_hrpace"),{data:{datasets:[
+      {type:"scatter",label:"Carreras",data:pts,backgroundColor:C.rhr,pointRadius:4},
+      {type:"line",label:"Ritmo meta 4:01",data:[{x:gpMin,y:yLo},{x:gpMin,y:yHi}],borderColor:C.goal,borderDash:[5,4],borderWidth:1.5,pointRadius:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#2a2723",
-      callbacks:{label:c=>`${c.raw.n}: ${Math.floor(c.raw.x)}:${String(Math.round(c.raw.x%1*60)).padStart(2,"0")}/km · ${c.raw.y} bpm`}}},
-      scales:{x:{title:{display:true,text:"min/km",color:MUTED,font:{size:10}},...axis()},y:{title:{display:true,text:"bpm",color:MUTED,font:{size:10}},...axis()}}}});
+      callbacks:{label:c=>c.raw.n?`${c.raw.n}: ${Math.floor(c.raw.x)}:${String(Math.round(c.raw.x%1*60)).padStart(2,"0")}/km · ${c.raw.y} bpm`:"Ritmo meta 4:01/km"}}},
+      scales:{x:{type:"linear",title:{display:true,text:"min/km · ↓ verde = meta",color:MUTED,font:{size:10}},...axis()},y:{title:{display:true,text:"bpm",color:MUTED,font:{size:10}},...axis()}}}});
 
   /* coaching */
   const dayLoad={}; for(const a of acts) if(a.start&&a.training_load) dayLoad[a.start.slice(0,10)]=(dayLoad[a.start.slice(0,10)]||0)+a.training_load;
@@ -410,6 +449,28 @@ async function load(){
     <div class="card"><h3>Carga aguda:crónica (ACWR)</h3><div class="big num" style="color:${az[1]}">${acwr?acwr.toFixed(2):"—"}</div><div class="desc"><b>${az[0]}.</b> ${az[2]}</div></div>
     <div class="card"><h3>Polarización 80/20</h3><div class="big num">${easyPct!=null?easyPct+"%":"—"}<small class="muted" style="font-size:13px"> fácil</small></div><div class="track"><div class="fill" style="width:${easyPct||0}%;background:${C.run}"></div></div><div class="desc">Objetivo ~80% fácil. ${easyPct!=null?(easyPct>=75?"Buen equilibrio.":"Demasiada intensidad; suma rodajes suaves."):""}</div></div>
     <div class="card"><h3>Rampa semanal (km)</h3><div class="big num">${ramp!=null?(ramp>0?"+":"")+ramp+"%":"—"}</div><div class="desc">Regla clásica: no subir más de ~10%/sem.</div></div>`;
+
+  /* planning: target paces + plan */
+  const paces=trainingPaces(p), phase=planPhase(days), gp=fmtPace(GOAL.paceKm);
+  document.getElementById("planning").innerHTML=`
+    <div class="card">
+      <h3>Ritmos objetivo</h3>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Ritmo meta Berlín <b class="goalpace">${gp}</b> · el resto según tu forma actual</div>
+      <table class="paces">${paces?paces.map(r=>`<tr class="${r.z.startsWith("Maratón")?"goalrow":""}"><td class="z">${r.z}<div class="why">${r.why}</div></td><td class="p">${r.p}</td></tr>`).join(""):'<tr><td class="muted">Sin datos suficientes.</td></tr>'}</table>
+    </div>
+    <div class="card plan">
+      <h3>Plan hacia 2:50 · ${days} días</h3>
+      <span class="phase">Fase: ${phase.name}</span>
+      <div style="font-size:12.5px;margin-bottom:4px">${phase.focus}. Volumen: <b>${phase.km}</b>.</div>
+      <div style="font-size:11.5px;color:var(--muted);margin:8px 0 2px">Semana tipo</div>
+      <ul>
+        <li>1 <b>fondo largo</b> 28–34 km, últimos km a ritmo meta <b class="tp">${gp}</b></li>
+        <li>1 <b>umbral</b> 5–6 km a <b class="tp">${paces?paces[2].p:"—"}</b></li>
+        <li>1 <b>intervalos</b> (VO₂): 5–6×1000 a <b class="tp">${paces?paces[3].p:"—"}</b></li>
+        <li>3 <b>rodajes fáciles</b> a <b class="tp">${paces?paces[0].p:"—"}</b></li>
+        <li>1 día de <b>descanso</b> o cross</li>
+      </ul>
+    </div>`;
 
   /* analysis */
   const A=[]; const rc=kmSeries[kmSeries.length-1]||0, rprev=kmSeries.length>=2?kmSeries[kmSeries.length-2]:null;
@@ -445,7 +506,10 @@ async function load(){
 
   /* activities */
   document.querySelector("#acts tbody").innerHTML=acts.slice(0,20).map(a=>{const sp=sportOf(a.type);
-    const pv=sp==="run"&&a.avg_speed_kmh?fmtPace(3600/a.avg_speed_kmh):a.avg_speed_kmh?fmt(a.avg_speed_kmh,1)+" km/h":"—";
+    const secKm=a.avg_speed_kmh?3600/a.avg_speed_kmh:null;
+    const isRun=sp==="run"&&secKm;
+    const atGoal=isRun&&secKm<=GOAL.paceKm+1;
+    const pv=isRun?`<span class="${atGoal?"goalpace":""}">${fmtPace(secKm)}${atGoal?" ✓":""}</span>`:a.avg_speed_kmh?fmt(a.avg_speed_kmh,1)+" km/h":"—";
     return `<tr><td class="num">${(a.start||"").slice(0,10)}</td><td><span class="dot" style="background:${C[sp]}"></span>${a.name||a.type||"—"}</td>
       <td class="num">${fmt(a.duration_min)}m</td><td class="num">${a.distance_km?fmt(a.distance_km,1)+" km":"—"}</td>
       <td class="num">${pv}</td><td class="num">${a.avg_hr?fmt(a.avg_hr):"—"}</td><td class="num">${a.elevation_gain_m?fmt(a.elevation_gain_m)+"m":"—"}</td></tr>`;
