@@ -83,11 +83,6 @@
   .analysis p:last-child{margin:0}
   .analysis .d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;vertical-align:middle}
   .analysis b{font-weight:650}
-  .ainote{background:linear-gradient(135deg,#f3f8ff,#f7f4ff);border:1px solid #e4e7f2;border-radius:14px;padding:13px 15px;margin-bottom:12px}
-  .ainote .h{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6a6396;margin-bottom:7px}
-  .ainote p{margin:0 0 8px;font-size:13px}
-  .ainote p:last-child{margin:0}
-  .aisub{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin:2px 0 8px}
 
   /* coach */
   .coach .big{font-size:26px;font-weight:750}
@@ -489,15 +484,7 @@ async function load(){
   if(h7&&h14){const df=Math.round(h7)-Math.round(h14);A.push([C.hrv,`Tu HRV va ${df>0?"<b>al alza</b> — buena adaptación":df<0?"<b>a la baja</b> — vigila fatiga y sueño":"<b>estable</b>"} (${fmt(h7,0)} vs ${fmt(h14,0)} ms la semana previa).`]);}
   if(acwr) A.push([az[1],`Tu carga aguda:crónica es <b>${acwr.toFixed(2)}</b> (${az[0].toLowerCase()}). ${acwr<0.8?"Tienes margen para entrenar más esta semana.":acwr>1.5?"Baja un poco para no arriesgar lesión.":"Sigue así."}`]);
   A.push([C.ready,`<b>Esta semana:</b> ${rc<45?"sube el fondo largo 2–3 km, ":""}añade 1 sesión a ritmo objetivo (${fmtPace(GOAL.paceKm)}) y mantén el resto en fácil.`]);
-  const esc=x=>(x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  let aiHtml="";
-  if(s.coach&&s.coach.text){
-    const when=s.coach.generated_at?new Date(s.coach.generated_at).toLocaleDateString("es-MX"):"";
-    const paras=esc(s.coach.text).split(/\n\s*\n|\n/).filter(x=>x.trim()).map(p=>`<p>${p}</p>`).join("");
-    aiHtml=`<div class="ainote"><div class="h">🧠 Análisis IA (Claude) · ${when}</div>${paras}</div>`;
-  }
-  const bullets=A.map(([c,t])=>`<p><span class="d" style="background:${c}"></span>${t}</p>`).join("");
-  document.getElementById("analysis").innerHTML=aiHtml+(aiHtml?`<div class="aisub">Señales de tus datos</div>`:"")+bullets;
+  document.getElementById("analysis").innerHTML=A.map(([c,t])=>`<p><span class="d" style="background:${c}"></span>${t}</p>`).join("");
 
   /* today */
   document.getElementById("today").innerHTML=[
