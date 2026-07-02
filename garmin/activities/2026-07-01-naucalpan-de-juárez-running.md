@@ -1,0 +1,11 @@
+# Naucalpan de Juárez Running
+- Type: running
+- Start: 2026-07-01 19:39:41
+- Duration: 40.4 min
+- Distance: 7.6 km
+- Avg pace/speed: 11.3 km/h
+- Avg HR: 140.0 bpm
+- Max HR: 166.0 bpm
+- Elevation gain: 102.0 m
+- Calories: 564.0
+- Training load: 78.30509948730469

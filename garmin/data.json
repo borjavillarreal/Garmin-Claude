@@ -419,31 +419,65 @@
       "start": "2026-07-01 07:22:45",
       "training_load": 2.5405426025390625,
       "type": "strength_training"
+    },
+    "23448840943": {
+      "avg_hr": 140.0,
+      "avg_speed_kmh": 11.3,
+      "calories": 564.0,
+      "distance_km": 7.6,
+      "duration_min": 40.4,
+      "elevation_gain_m": 102.0,
+      "id": 23448840943,
+      "max_hr": 166.0,
+      "name": "Naucalpan de Ju\u00e1rez Running",
+      "start": "2026-07-01 19:39:41",
+      "training_load": 78.30509948730469,
+      "type": "running"
     }
   },
   "fitness": {
-    "date": "2026-07-01",
+    "date": "2026-07-02",
     "max_metrics_raw": [],
     "race_pred": {
-      "sec_10k": 2386,
-      "sec_5k": 1114,
-      "sec_half": 5371,
-      "sec_marathon": 11877
+      "sec_10k": 2384,
+      "sec_5k": 1112,
+      "sec_half": 5364,
+      "sec_marathon": 11851
     },
     "race_pred_raw": {
-      "calendarDate": "2026-07-01",
+      "calendarDate": "2026-07-02",
       "fromCalendarDate": null,
-      "time10K": 2386,
-      "time5K": 1114,
-      "timeHalfMarathon": 5371,
-      "timeMarathon": 11877,
+      "time10K": 2384,
+      "time5K": 1112,
+      "timeHalfMarathon": 5364,
+      "timeMarathon": 11851,
       "toCalendarDate": null,
       "userId": 120410381
     },
     "vo2max_bike": null,
     "vo2max_run": null
   },
-  "updated_at": "2026-07-01T20:19:00.633457+00:00",
+  "fitness_history": {
+    "2026-06-30": {
+      "sec_10k": 2383,
+      "sec_5k": 1112,
+      "sec_half": 5365,
+      "sec_marathon": 11862
+    },
+    "2026-07-01": {
+      "sec_10k": 2382,
+      "sec_5k": 1111,
+      "sec_half": 5358,
+      "sec_marathon": 11838
+    },
+    "2026-07-02": {
+      "sec_10k": 2384,
+      "sec_5k": 1112,
+      "sec_half": 5364,
+      "sec_marathon": 11851
+    }
+  },
+  "updated_at": "2026-07-02T14:21:03.707247+00:00",
   "wellness": {
     "2026-06-02": {
       "body_battery_high": 88,
@@ -831,9 +865,22 @@
       "resting_hr": 51,
       "sleep_hours": 4.3,
       "sleep_score": 38,
-      "steps": 3069,
+      "steps": 12105,
       "stress_avg": 21,
-      "training_readiness": 25
+      "training_readiness": 22
+    },
+    "2026-07-02": {
+      "body_battery_high": 83,
+      "body_battery_low": 33,
+      "date": "2026-07-02",
+      "hrv_overnight": 41,
+      "hrv_status": "BALANCED",
+      "resting_hr": 51,
+      "sleep_hours": 8.5,
+      "sleep_score": 86,
+      "steps": 57,
+      "stress_avg": 17,
+      "training_readiness": 65
     }
   }
 }
